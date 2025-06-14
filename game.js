@@ -37,6 +37,12 @@ class ParticlePool {
     reset() {
         this.next = 0;
         this.activeParticles = 0;
+        // Reset all particles in the pool
+        for (const particle of this.pool) {
+            if (particle) {
+                particle.isDead = true;
+            }
+        }
     }
 }
 
@@ -235,11 +241,14 @@ class GameObject {
             return;
         }
 
-        // Update particles
+        // Update particles and remove dead ones
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const particle = this.particles[i];
             particle.update();
             if (particle.isDead) {
+                if (Game.particlePool) {
+                    Game.particlePool.release(particle);
+                }
                 this.particles.splice(i, 1);
             }
         }
@@ -365,6 +374,7 @@ class Particle {
         this.vy = vy;
         this.color = color;
         this.life = 1;
+        this.isDead = false;
     }
 
     update() {
@@ -372,13 +382,16 @@ class Particle {
         this.y += this.vy;
         this.vy += 0.1; // gravity
         this.life -= 0.02;
+        this.isDead = (this.life <= 0);
     }
 
     draw(ctx) {
         ctx.fillStyle = this.color;
+        ctx.globalAlpha = this.life;
         ctx.beginPath();
         ctx.arc(this.x, this.y, 2, 0, TWO_PI);
         ctx.fill();
+        ctx.globalAlpha = 1;
     }
 }
 
