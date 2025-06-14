@@ -1,10 +1,11 @@
 class GameObject {
-    constructor(x, y, type, speedMultiplier, centerX, centerY) {
+    constructor(x, y, type, speedMultiplier, centerX, centerY, size = 1) {
         this.x = x;
         this.y = y;
         this.type = type; // 'flying' or 'tossed' or 'orbital'
-        this.width = 40;
-        this.height = 40;
+        this.size = size; // 1 is normal size, 0.5 is half size, etc.
+        this.width = 40 * this.size;
+        this.height = 40 * this.size;
         this.baseSpeed = 3; // Reduced from 5 to 3
         this.speedMultiplier = speedMultiplier;
         this.speed = this.baseSpeed * this.speedMultiplier;
@@ -14,6 +15,7 @@ class GameObject {
         this.particles = [];
         this.breakProgress = 0; // 0 to 1 for breaking animation
         this.breakDirection = Math.random() > 0.5 ? 1 : -1;
+        this.pieces = []; // Array to hold smaller pieces
         
         // Gravitational properties
         this.centerX = centerX;
@@ -37,6 +39,43 @@ class GameObject {
         const orbitalSpeed = (Math.random() * 2 + 3) * this.speedMultiplier;
         this.velocityX = Math.cos(angle + Math.PI/2) * orbitalSpeed;
         this.velocityY = Math.sin(angle + Math.PI/2) * orbitalSpeed;
+    }
+
+    breakIntoPieces() {
+        if (this.size <= 0.25) return []; // Don't break if too small
+        
+        const numPieces = 4;
+        const newSize = this.size * 0.5;
+        const pieces = [];
+        
+        // Calculate spread angle based on current velocity
+        const currentAngle = Math.atan2(this.velocityY, this.velocityX);
+        const spreadAngle = Math.PI / 4; // 45 degrees spread
+        
+        for (let i = 0; i < numPieces; i++) {
+            const angle = currentAngle + (Math.random() - 0.5) * spreadAngle;
+            const speed = Math.sqrt(this.velocityX * this.velocityX + this.velocityY * this.velocityY) * 1.2;
+            
+            const piece = new GameObject(
+                this.x,
+                this.y,
+                this.type,
+                this.speedMultiplier,
+                this.centerX,
+                this.centerY,
+                newSize
+            );
+            
+            // Set velocity for the piece
+            piece.velocityX = Math.cos(angle) * speed;
+            piece.velocityY = Math.sin(angle) * speed;
+            piece.color = this.color;
+            piece.slicedColor = this.slicedColor;
+            
+            pieces.push(piece);
+        }
+        
+        return pieces;
     }
 
     update() {
@@ -235,6 +274,75 @@ class SlashEffect {
     }
 }
 
+class SoundManager {
+    constructor() {
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        this.sounds = {};
+        this.init();
+    }
+
+    init() {
+        // Create slice sound
+        this.createSliceSound();
+    }
+
+    createSliceSound() {
+        const duration = 0.3;
+        const sampleRate = this.audioContext.sampleRate;
+        const buffer = this.audioContext.createBuffer(2, sampleRate * duration, sampleRate);
+        
+        for (let channel = 0; channel < 2; channel++) {
+            const channelData = buffer.getChannelData(channel);
+            for (let i = 0; i < buffer.length; i++) {
+                const t = i / sampleRate;
+                // Create a "whoosh" sound with frequency sweep
+                const frequency = 2000 - 1500 * (t / duration);
+                const amplitude = Math.exp(-4 * t);
+                channelData[i] = amplitude * Math.sin(2 * Math.PI * frequency * t);
+            }
+        }
+        
+        this.sounds.slice = buffer;
+    }
+
+    playSlice() {
+        if (this.audioContext.state === 'suspended') {
+            this.audioContext.resume();
+        }
+        
+        const source = this.audioContext.createBufferSource();
+        source.buffer = this.sounds.slice;
+        
+        // Add some stereo panning
+        const panner = this.audioContext.createStereoPanner();
+        panner.pan.value = (Math.random() - 0.5) * 0.5; // Random pan between -0.25 and 0.25
+        
+        // Add some reverb
+        const reverb = this.audioContext.createConvolver();
+        const reverbBuffer = this.audioContext.createBuffer(2, this.audioContext.sampleRate * 0.5, this.audioContext.sampleRate);
+        for (let channel = 0; channel < 2; channel++) {
+            const channelData = reverbBuffer.getChannelData(channel);
+            for (let i = 0; i < reverbBuffer.length; i++) {
+                channelData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.audioContext.sampleRate * 0.1));
+            }
+        }
+        reverb.buffer = reverbBuffer;
+        
+        // Create gain node for volume control
+        const gainNode = this.audioContext.createGain();
+        gainNode.gain.value = 0.3; // Adjust volume
+        
+        // Connect nodes
+        source.connect(panner);
+        panner.connect(reverb);
+        reverb.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+        
+        // Play the sound
+        source.start();
+    }
+}
+
 class Game {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
@@ -248,13 +356,16 @@ class Game {
         this.speedMultiplier = 1;
         this.lastDifficultyIncrease = Date.now();
         this.difficultyIncreaseInterval = 60000;
-        this.slashEffects = []; // Add array for slash effects
+        this.slashEffects = [];
+        
+        // Initialize sound manager
+        this.soundManager = new SoundManager();
         
         // Center point properties
         this.centerX = this.canvas.width / 2;
         this.centerY = this.canvas.height / 2;
         this.lastCenterMove = Date.now();
-        this.centerMoveInterval = 30000; // 30 seconds
+        this.centerMoveInterval = 30000;
         
         this.resize();
         this.setupEventListeners();
@@ -354,13 +465,13 @@ class Game {
 
     checkSlice(startX, startY, endX, endY) {
         const objects = this.objects.filter(obj => !obj.sliced);
+        let anySliced = false;
         
         objects.forEach(obj => {
             const dx = endX - startX;
             const dy = endY - startY;
             const length = Math.sqrt(dx * dx + dy * dy);
             
-            // Check if swipe intersects with object
             if (this.lineIntersectsRect(
                 startX, startY,
                 endX, endY,
@@ -373,8 +484,19 @@ class Game {
                 obj.createSliceParticles();
                 this.score += 10;
                 document.getElementById('scoreValue').textContent = this.score;
+                
+                // Create smaller pieces
+                const pieces = obj.breakIntoPieces();
+                this.objects.push(...pieces);
+                
+                anySliced = true;
             }
         });
+        
+        // Play sound only if something was actually sliced
+        if (anySliced) {
+            this.soundManager.playSlice();
+        }
     }
 
     lineIntersectsRect(x1, y1, x2, y2, rx, ry, rw, rh) {
