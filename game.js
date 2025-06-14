@@ -975,27 +975,22 @@ class Game {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
-        this.score = 0;
+        
+        // Set canvas size to window size
+        this.resizeCanvas();
+        window.addEventListener('resize', () => this.resizeCanvas());
+        
+        // Initialize game state
         this.objects = [];
-        this.lastSpawnTime = 0;
-        this.spawnInterval = 1500;
-        this.touchStart = null;
-        this.gameStartTime = Date.now();
-        this.speedMultiplier = 1;
-        this.lastDifficultyIncrease = Date.now();
-        this.difficultyIncreaseInterval = 60000;
         this.slashEffects = [];
-        
-        // Initialize sound manager
-        this.soundManager = new SoundManager();
-        
-        // Center point properties
+        this.touchStart = null;
         this.centerX = this.canvas.width / 2;
         this.centerY = this.canvas.height / 2;
         this.lastCenterMove = Date.now();
-        this.centerMoveInterval = 30000;
-        
-        this.lastBackgroundChange = Date.now();
+        this.centerMoveInterval = 5000;
+        this.speedMultiplier = 1;
+        this.lastSpeedIncrease = Date.now();
+        this.speedIncreaseInterval = 60000;
         this.backgroundColors = [
             '#ffb6c1', // Light pink
             '#ffc0cb', // Pink
@@ -1006,77 +1001,160 @@ class Game {
             '#ffb6c1', // Light pink
             '#ffc0cb'  // Pink
         ];
-        this.currentColorIndex = 0;
+        this.currentBackgroundIndex = 0;
+        this.lastBackgroundChange = Date.now();
+        this.backgroundChangeInterval = 60000;
+
+        // Initialize systems
+        this.particlePool = new ParticlePool(1000);
+        Game.particlePool = this.particlePool;
+        this.soundManager = new SoundManager();
         
-        this.resize();
+        // Start game loop
         this.setupEventListeners();
         this.gameLoop();
-        this.particlePool = new ParticlePool(1000);
-        Game.particlePool = this.particlePool; // Ensure static access is available
+        
+        // Performance monitoring
         this.lastFrameTime = performance.now();
         this.frameCount = 0;
         this.fps = 0;
     }
 
-    resize() {
+    resizeCanvas() {
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
-        // Update center point on resize
-        this.updateCenterPoint();
+        this.centerX = this.canvas.width / 2;
+        this.centerY = this.canvas.height / 2;
     }
 
-    updateCenterPoint() {
-        // Calculate the middle 25% of the screen
-        const marginX = this.canvas.width * 0.375; // (100% - 25%) / 2
-        const marginY = this.canvas.height * 0.375;
+    draw() {
+        // Clear canvas with current background color
+        this.ctx.fillStyle = this.backgroundColors[this.currentBackgroundIndex];
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Draw center point
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.beginPath();
+        this.ctx.arc(this.centerX, this.centerY, 5, 0, TWO_PI);
+        this.ctx.fill();
+
+        // Draw all objects
+        for (const obj of this.objects) {
+            obj.draw(this.ctx);
+        }
+
+        // Draw slash effects
+        for (const effect of this.slashEffects) {
+            effect.draw(this.ctx);
+        }
+
+        // Draw FPS counter
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = '16px Arial';
+        this.ctx.fillText(`FPS: ${this.fps}`, 10, 20);
+    }
+
+    spawnObject() {
+        const angle = Math.random() * TWO_PI;
+        const distance = 300;
+        const x = this.centerX + Math.cos(angle) * distance;
+        const y = this.centerY + Math.sin(angle) * distance;
         
-        this.centerX = marginX + Math.random() * (this.canvas.width - 2 * marginX);
-        this.centerY = marginY + Math.random() * (this.canvas.height - 2 * marginY);
+        const type = Math.floor(Math.random() * 3);
+        const size = Math.random() * 0.5 + 0.75;
+        
+        this.objects.push(new GameObject(
+            x,
+            y,
+            type,
+            this.speedMultiplier,
+            this.centerX,
+            this.centerY,
+            size
+        ));
+    }
+
+    update() {
+        const currentTime = performance.now();
+        this.frameCount++;
+        
+        if (currentTime - this.lastFrameTime >= 1000) {
+            this.fps = this.frameCount;
+            this.frameCount = 0;
+            this.lastFrameTime = currentTime;
+        }
+
+        // Spawn new objects
+        if (Math.random() < 0.02) {
+            this.spawnObject();
+        }
+
+        // Update center point periodically
+        const currentTime2 = Date.now();
+        if (currentTime2 - this.lastCenterMove >= this.centerMoveInterval) {
+            this.updateCenterPoint();
+            this.lastCenterMove = currentTime2;
+        }
+
+        // Increase speed over time
+        if (currentTime2 - this.lastSpeedIncrease >= this.speedIncreaseInterval) {
+            this.speedMultiplier += 0.2;
+            this.lastSpeedIncrease = currentTime2;
+            
+            // Change background color
+            this.currentBackgroundIndex = (this.currentBackgroundIndex + 1) % this.backgroundColors.length;
+        }
+
+        // Update objects and remove dead ones
+        for (let i = this.objects.length - 1; i >= 0; i--) {
+            const obj = this.objects[i];
+            obj.update();
+            if (obj.isDead) {
+                obj.particles.length = 0;
+                this.objects.splice(i, 1);
+            }
+        }
+
+        // Update slash effects
+        this.slashEffects = this.slashEffects.filter(effect => {
+            effect.update();
+            return effect.life > 0;
+        });
+    }
+
+    gameLoop() {
+        this.update();
+        this.draw();
+        requestAnimationFrame(() => this.gameLoop());
     }
 
     setupEventListeners() {
-        window.addEventListener('resize', () => this.resize());
-        
         this.canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
             this.touchStart = {
-                x: e.touches[0].clientX,
-                y: e.touches[0].clientY
+                x: e.touches[0].clientX - this.canvas.offsetLeft,
+                y: e.touches[0].clientY - this.canvas.offsetTop
             };
         });
 
         this.canvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
             if (!this.touchStart) return;
-
-            const touch = e.touches[0];
-            const endX = touch.clientX;
-            const endY = touch.clientY;
             
-            // Create slash effect for every swipe
-            this.slashEffects.push(new SlashEffect(
-                this.touchStart.x,
-                this.touchStart.y,
-                endX,
-                endY
-            ));
-
-            this.checkSlice(
-                this.touchStart.x,
-                this.touchStart.y,
-                endX,
-                endY
-            );
-
-            // Update touch start for continuous swipes
-            this.touchStart = { x: endX, y: endY };
+            const currentX = e.touches[0].clientX - this.canvas.offsetLeft;
+            const currentY = e.touches[0].clientY - this.canvas.offsetTop;
+            
+            this.ctx.strokeStyle = '#ffffff';
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.touchStart.x, this.touchStart.y);
+            this.ctx.lineTo(currentX, currentY);
+            this.ctx.stroke();
         });
 
         this.canvas.addEventListener('touchend', (e) => {
             if (!this.touchStart) return;
             
-            const endX = e.touches[0].clientX - this.canvas.offsetLeft;
-            const endY = e.touches[0].clientY - this.canvas.offsetTop;
+            const endX = e.changedTouches[0].clientX - this.canvas.offsetLeft;
+            const endY = e.changedTouches[0].clientY - this.canvas.offsetTop;
             
             const angle = Math.atan2(endY - this.touchStart.y, endX - this.touchStart.x);
             this.slashEffects.push(new SlashEffect(this.touchStart.x, this.touchStart.y, angle));
@@ -1084,38 +1162,6 @@ class Game {
             this.checkSlice(endX, endY);
             this.touchStart = null;
         });
-    }
-
-    spawnObject() {
-        const now = Date.now();
-        if (now - this.lastSpawnTime < this.spawnInterval) return;
-        
-        this.lastSpawnTime = now;
-        
-        // Spawn objects from the edges
-        let x, y;
-        const side = Math.floor(Math.random() * 4); // 0: top, 1: right, 2: bottom, 3: left
-        
-        switch(side) {
-            case 0: // top
-                x = Math.random() * this.canvas.width;
-                y = -50;
-                break;
-            case 1: // right
-                x = this.canvas.width + 50;
-                y = Math.random() * this.canvas.height;
-                break;
-            case 2: // bottom
-                x = Math.random() * this.canvas.width;
-                y = this.canvas.height + 50;
-                break;
-            case 3: // left
-                x = -50;
-                y = Math.random() * this.canvas.height;
-                break;
-        }
-        
-        this.objects.push(new GameObject(x, y, 'orbital', this.speedMultiplier, this.centerX, this.centerY));
     }
 
     checkSlice(x, y) {
@@ -1164,81 +1210,17 @@ class Game {
         return sliceFound;
     }
 
-    update() {
-        const currentTime = performance.now();
-        this.frameCount++;
+    updateCenterPoint() {
+        // Calculate the middle 25% of the screen
+        const marginX = this.canvas.width * 0.375; // (100% - 25%) / 2
+        const marginY = this.canvas.height * 0.375;
         
-        if (currentTime - this.lastFrameTime >= 1000) {
-            this.fps = this.frameCount;
-            this.frameCount = 0;
-            this.lastFrameTime = currentTime;
-        }
-
-        // Update center point periodically
-        const currentTime2 = Date.now();
-        if (currentTime2 - this.lastCenterMove >= this.centerMoveInterval) {
-            this.updateCenterPoint();
-            this.lastCenterMove = currentTime2;
-        }
-
-        // Update difficulty
-        if (currentTime - this.lastDifficultyIncrease >= this.difficultyIncreaseInterval) {
-            this.speedMultiplier += 0.2;
-            this.lastDifficultyIncrease = currentTime;
-            this.spawnInterval = Math.max(500, this.spawnInterval - 100);
-        }
-
-        // Update background color every minute
-        if (currentTime - this.lastBackgroundChange >= 60000) { // 60000ms = 1 minute
-            this.currentColorIndex = (this.currentColorIndex + 1) % this.backgroundColors.length;
-            this.lastBackgroundChange = currentTime;
-        }
-
-        this.spawnObject();
-        
-        // Update objects and remove dead ones
-        for (let i = this.objects.length - 1; i >= 0; i--) {
-            const obj = this.objects[i];
-            obj.update();
-            if (obj.isDead) {
-                // Clear particles before removing object
-                obj.particles.length = 0;
-                this.objects.splice(i, 1);
-            }
-        }
-
-        // Update slash effects
-        this.slashEffects = this.slashEffects.filter(effect => {
-            effect.update();
-            return effect.life > 0;
-        });
-    }
-
-    draw() {
-        // Clear canvas with current background color
-        this.ctx.fillStyle = this.backgroundColors[this.currentColorIndex];
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // Draw objects
-        this.objects.forEach(obj => obj.draw(this.ctx));
-        
-        // Draw slash effects
-        this.slashEffects.forEach(effect => effect.draw(this.ctx));
-        
-        // Draw FPS counter
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = '16px Arial';
-        this.ctx.fillText(`FPS: ${this.fps}`, 10, 20);
-    }
-
-    gameLoop() {
-        this.update();
-        this.draw();
-        requestAnimationFrame(() => this.gameLoop());
+        this.centerX = marginX + Math.random() * (this.canvas.width - 2 * marginX);
+        this.centerY = marginY + Math.random() * (this.canvas.height - 2 * marginY);
     }
 }
 
-// Start the game when the page loads
-window.addEventListener('load', () => {
+// Initialize game when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
     new Game();
 }); 
