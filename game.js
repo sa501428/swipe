@@ -17,6 +17,9 @@ class GameObject {
         this.breakDirection = Math.random() > 0.5 ? 1 : -1;
         this.pieces = []; // Array to hold smaller pieces
         
+        // Randomly select a fruit type
+        this.fruitType = Math.floor(Math.random() * 3); // 0: apple, 1: banana, 2: orange
+        
         // Gravitational properties
         this.centerX = centerX;
         this.centerY = centerY;
@@ -24,10 +27,22 @@ class GameObject {
         this.velocityY = 0;
         this.gravity = 0.2 * this.speedMultiplier;
         
-        // Random color generation
-        const hue = Math.random() * 360;
-        this.color = `hsl(${hue}, 70%, 60%)`;
-        this.slicedColor = `hsl(${hue}, 70%, 40%)`; // Darker version for sliced state
+        // Fruit-specific colors
+        this.colors = {
+            apple: {
+                main: '#ff0000',
+                stem: '#663300',
+                leaf: '#00ff00'
+            },
+            banana: {
+                main: '#ffff00',
+                stem: '#663300'
+            },
+            orange: {
+                main: '#ffa500',
+                stem: '#663300'
+            }
+        };
         
         // Initialize velocity based on position relative to center
         const dx = this.x - this.centerX;
@@ -112,24 +127,80 @@ class GameObject {
         this.particles = this.particles.filter(p => p.life > 0);
     }
 
+    drawFruit(ctx) {
+        const width = this.width;
+        const height = this.height;
+        
+        switch(this.fruitType) {
+            case 0: // Apple
+                // Main body
+                ctx.fillStyle = this.sliced ? this.colors.apple.main + '80' : this.colors.apple.main;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, width/2, height/2, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Stem
+                ctx.strokeStyle = this.colors.apple.stem;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, -height/2);
+                ctx.quadraticCurveTo(width/4, -height/2 - 10, width/4, -height/2 - 15);
+                ctx.stroke();
+                
+                // Leaf
+                ctx.fillStyle = this.colors.apple.leaf;
+                ctx.beginPath();
+                ctx.ellipse(width/4, -height/2 - 10, 5, 8, Math.PI/4, 0, Math.PI * 2);
+                ctx.fill();
+                break;
+                
+            case 1: // Banana
+                // Main body
+                ctx.fillStyle = this.sliced ? this.colors.banana.main + '80' : this.colors.banana.main;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, width/2, height/2, Math.PI/4, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Stem
+                ctx.strokeStyle = this.colors.banana.stem;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(-width/3, -height/3);
+                ctx.quadraticCurveTo(-width/2, -height/2, -width/2 - 5, -height/2 - 5);
+                ctx.stroke();
+                break;
+                
+            case 2: // Orange
+                // Main body
+                ctx.fillStyle = this.sliced ? this.colors.orange.main + '80' : this.colors.orange.main;
+                ctx.beginPath();
+                ctx.arc(0, 0, width/2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Stem
+                ctx.strokeStyle = this.colors.orange.stem;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, -height/2);
+                ctx.lineTo(0, -height/2 - 10);
+                ctx.stroke();
+                break;
+        }
+    }
+
     draw(ctx) {
         ctx.save();
         ctx.translate(this.x, this.y);
         
         if (this.sliced) {
-            // Draw breaking animation
             ctx.rotate(this.angle);
             const breakOffset = this.breakProgress * 30 * this.breakDirection;
             
-            // Draw two halves of the object
-            ctx.fillStyle = this.slicedColor;
-            ctx.beginPath();
-            ctx.moveTo(-this.width/2, -this.height/2);
-            ctx.lineTo(this.width/2, -this.height/2);
-            ctx.lineTo(this.width/2, this.height/2);
-            ctx.lineTo(-this.width/2, this.height/2);
-            ctx.closePath();
-            ctx.fill();
+            // Draw the sliced fruit
+            ctx.translate(breakOffset, 0);
+            this.drawFruit(ctx);
+            ctx.translate(-breakOffset * 2, 0);
+            this.drawFruit(ctx);
             
             // Draw break line
             ctx.strokeStyle = '#ffffff';
@@ -140,13 +211,11 @@ class GameObject {
             ctx.stroke();
         } else {
             ctx.rotate(this.angle);
-            ctx.fillStyle = this.color;
-            ctx.fillRect(-this.width/2, -this.height/2, this.width, this.height);
+            this.drawFruit(ctx);
         }
         
         ctx.restore();
 
-        // Draw particles
         this.particles.forEach(particle => {
             particle.draw(ctx);
         });
@@ -557,14 +626,9 @@ class Game {
     }
 
     draw() {
-        this.ctx.fillStyle = '#000';
+        // Pink background
+        this.ctx.fillStyle = '#ffb6c1';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // Draw center point (optional, for debugging)
-        // this.ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-        // this.ctx.beginPath();
-        // this.ctx.arc(this.centerX, this.centerY, 20, 0, Math.PI * 2);
-        // this.ctx.fill();
         
         // Draw objects
         this.objects.forEach(obj => obj.draw(this.ctx));
