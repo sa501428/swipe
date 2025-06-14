@@ -128,7 +128,10 @@ class GameObject {
                 this.centerY,
                 newSize
             );
-            piece.sliceCount = this.sliceCount + 1; // Increment slice count for new pieces
+            
+            // Maintain the same fruit type as the parent
+            piece.fruitType = this.fruitType;
+            piece.sliceCount = this.sliceCount + 1;
             
             // Calculate spread angle based on piece index
             const angle = (i * Math.PI / 2) + (Math.random() - 0.5) * 0.5;
