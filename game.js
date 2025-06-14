@@ -15,6 +15,11 @@ class GameObject {
         this.breakProgress = 0; // 0 to 1 for breaking animation
         this.breakDirection = Math.random() > 0.5 ? 1 : -1;
         
+        // Random color generation
+        const hue = Math.random() * 360;
+        this.color = `hsl(${hue}, 70%, 60%)`;
+        this.slicedColor = `hsl(${hue}, 70%, 40%)`; // Darker version for sliced state
+        
         if (type === 'tossed') {
             this.velocityY = -12 * this.speedMultiplier; // Reduced from -15
             this.velocityX = (Math.random() - 0.5) * 6 * this.speedMultiplier; // Reduced from 8
@@ -58,7 +63,7 @@ class GameObject {
             const breakOffset = this.breakProgress * 30 * this.breakDirection;
             
             // Draw two halves of the object
-            ctx.fillStyle = '#ff4444';
+            ctx.fillStyle = this.slicedColor;
             ctx.beginPath();
             ctx.moveTo(-this.width/2, -this.height/2);
             ctx.lineTo(this.width/2, -this.height/2);
@@ -76,7 +81,7 @@ class GameObject {
             ctx.stroke();
         } else {
             ctx.rotate(this.angle);
-            ctx.fillStyle = '#44ff44';
+            ctx.fillStyle = this.color;
             ctx.fillRect(-this.width/2, -this.height/2, this.width, this.height);
         }
         
@@ -98,7 +103,7 @@ class GameObject {
                 this.y,
                 Math.cos(angle) * speed,
                 Math.sin(angle) * speed,
-                '#ff4444' // Red particles for sliced objects
+                this.color // Use the object's color for particles
             ));
         }
     }
