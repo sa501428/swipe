@@ -1,23 +1,149 @@
+// Constants
+const TWO_PI = Math.PI * 2;
+
+// Particle Pool implementation
+class ParticlePool {
+    constructor(size) {
+        this.pool = Array.from({ length: size }, () => new Particle());
+        this.next = 0;
+    }
+
+    get(x, y, vx, vy, color) {
+        const p = this.pool[this.next];
+        p.reset(x, y, vx, vy, color);
+        this.next = (this.next + 1) % this.pool.length;
+        return p;
+    }
+}
+
+// Fruit type enum
+const FruitType = {
+    APPLE: 0,
+    BANANA: 1,
+    ORANGE: 2,
+    GRAPE: 3,
+    PINEAPPLE: 4,
+    STARFRUIT: 5,
+    DRAGONFRUIT: 6,
+    WATERMELON: 7,
+    POMEGRANATE: 8,
+    PASSIONFRUIT: 9,
+    LYCHEE: 10,
+    PAPAYA: 11,
+    MANGOSTEEN: 12,
+    KIWI: 13,
+    PERSIMMON: 14
+};
+
+// Global color palette
+const FruitColors = {
+    apple: {
+        main: '#ff0000',
+        stem: '#4a2810',
+        leaf: '#00ff00'
+    },
+    banana: {
+        main: '#ffff00',
+        stem: '#4a2810',
+        leaf: '#00ff00'
+    },
+    orange: {
+        main: '#ffa500',
+        stem: '#4a2810',
+        leaf: '#00ff00'
+    },
+    grape: {
+        main: '#800080',
+        stem: '#4a2810',
+        leaf: '#00ff00'
+    },
+    pineapple: {
+        main: '#ffff00',
+        stem: '#4a2810',
+        leaf: '#00ff00'
+    },
+    starfruit: {
+        main: '#ffff00',
+        stem: '#4a2810',
+        leaf: '#00ff00'
+    },
+    dragonfruit: {
+        main: '#ff0000',
+        stem: '#4a2810',
+        leaf: '#00ff00'
+    },
+    watermelon: {
+        main: '#ff0000',
+        stem: '#4a2810',
+        leaf: '#00ff00'
+    },
+    pomegranate: {
+        main: '#ff0000',
+        stem: '#4a2810',
+        leaf: '#00ff00'
+    },
+    passionfruit: {
+        main: '#800080',
+        stem: '#4a2810',
+        leaf: '#00ff00'
+    },
+    lychee: {
+        main: '#ff0000',
+        stem: '#4a2810',
+        leaf: '#00ff00'
+    },
+    papaya: {
+        main: '#ffa500',
+        stem: '#4a2810',
+        leaf: '#00ff00'
+    },
+    mangosteen: {
+        main: '#800080',
+        stem: '#4a2810',
+        leaf: '#00ff00'
+    },
+    kiwi: {
+        main: '#90ee90',
+        stem: '#4a2810',
+        leaf: '#00ff00'
+    },
+    persimmon: {
+        main: '#ffa500',
+        stem: '#4a2810',
+        leaf: '#00ff00'
+    }
+};
+
 class GameObject {
     // Static cache for fruit-specific data
     static fruitDataCache = {
-        grape: [[-7,7],[0,0],[7,7],[-4,-4],[4,-4]],
-        watermelon: Array.from({length: 7}, () => ({
-            angle: Math.random() * Math.PI*2,
-            dist: Math.random() * 10
-        })),
-        dragonfruit: Array.from({length: 12}, () => ({
-            angle: Math.random() * Math.PI*2,
-            radius: Math.random() * 20
-        })),
-        papaya: Array.from({length: 9}, () => ({
-            angle: Math.PI/2 + (Math.random()-0.5),
-            radius: 7 + Math.random()*5
-        })),
-        kiwi: Array.from({length: 18}, (_, i) => ({
-            angle: i * Math.PI*2/18,
-            radius: 10
-        }))
+        [FruitType.GRAPE]: {
+            coords: [[-7,7],[0,0],[7,7],[-4,-4],[4,-4]]
+        },
+        [FruitType.WATERMELON]: {
+            seeds: Array.from({length: 7}, () => ({
+                angle: Math.random() * Math.PI*2,
+                dist: Math.random() * 10
+            }))
+        },
+        [FruitType.DRAGONFRUIT]: {
+            dots: Array.from({length: 12}, () => ({
+                angle: Math.random() * Math.PI*2,
+                radius: Math.random() * 20
+            }))
+        },
+        [FruitType.PAPAYA]: {
+            seeds: Array.from({length: 9}, () => ({
+                angle: Math.PI/2 + (Math.random()-0.5),
+                radius: 7 + Math.random()*5
+            }))
+        },
+        [FruitType.KIWI]: {
+            seeds: Array.from({length: 18}, (_, i) => ({
+                angle: i * Math.PI*2/18,
+                radius: 10
+            }))
+        }
     };
 
     constructor(x, y, type, speedMultiplier, centerX, centerY, size = 1) {
@@ -49,23 +175,7 @@ class GameObject {
         this.gravity = 0.2 * this.speedMultiplier;
         
         // Fruit-specific colors
-        this.colors = {
-            apple: { main: '#ff2d2d', stem: '#5a350c', leaf: '#2ecc40' },
-            banana: { main: '#ffe135', stem: '#866c09', tip: '#d6b70a' },
-            orange: { main: '#ff9500', stem: '#ad6407', leaf: '#aeea00' },
-            grape: { main: '#6a1b9a', stem: '#68401a' },
-            pineapple: { main: '#ffdd55', stem: '#238b22', skin: '#a9743a', leaves: '#238b22' },
-            starfruit: { main: '#ffe659', stem: '#af8508' },
-            dragonfruit: { main: '#fc46aa', scales: '#57eb64', dots: '#000000' },
-            watermelon: { main: '#fc4c4e', rind: '#188835', seeds: '#222' },
-            pomegranate: { main: '#d9032e', stem: '#683214' },
-            passionfruit: { main: '#85266d', stem: '#745329' },
-            lychee: { main: '#e04947', stem: '#7f3523', skin: '#f8a4a4' },
-            papaya: { main: '#ffb23d', stem: '#8d5413', seeds: '#262200' },
-            mangosteen: { main: '#491f7e', stem: '#755217', cap: '#94fa7c' },
-            kiwi: { main: '#b0de4c', skin: '#725c27', seeds: '#222' },
-            persimmon: { main: '#fd6d1f', stem: '#70510e', cap: '#a1ce58' }
-        };
+        this.colors = FruitColors[this.getFruitTypeName()];
         
         // Pre-calculate fruit-specific data
         this.fruitData = this.initializeFruitData();
@@ -86,23 +196,11 @@ class GameObject {
         this.fadeProgress = 0; // New property for fade effect
         this.isFading = false; // New property to track if object is fading
         this.isOffscreen = false;
+        this.isDead = false;
     }
 
     initializeFruitData() {
-        switch(this.fruitType) {
-            case 3: // Grape
-                return { coords: GameObject.fruitDataCache.grape };
-            case 7: // Watermelon
-                return { seeds: GameObject.fruitDataCache.watermelon };
-            case 6: // Dragonfruit
-                return { dots: GameObject.fruitDataCache.dragonfruit };
-            case 11: // Papaya
-                return { seeds: GameObject.fruitDataCache.papaya };
-            case 13: // Kiwi
-                return { seeds: GameObject.fruitDataCache.kiwi };
-            default:
-                return null;
-        }
+        return GameObject.fruitDataCache[this.fruitType] || null;
     }
 
     breakIntoPieces() {
@@ -136,8 +234,10 @@ class GameObject {
     }
 
     update() {
+        if (this.isDead) return;
+
         // Quick offscreen check
-        const margin = 100; // Buffer zone
+        const margin = 100;
         this.isOffscreen = (
             this.x < -margin ||
             this.x > this.centerX * 2 + margin ||
@@ -145,12 +245,16 @@ class GameObject {
             this.y > this.centerY * 2 + margin
         );
 
-        if (this.isOffscreen) return;
+        if (this.isOffscreen) {
+            this.isDead = true;
+            return;
+        }
 
         if (this.isFading) {
             this.fadeProgress += 0.05;
             if (this.fadeProgress >= 1) {
                 this.fadeProgress = 1;
+                this.isDead = true;
                 return;
             }
         } else if (this.sliced) {
@@ -171,7 +275,7 @@ class GameObject {
             this.angle += this.rotationSpeed;
         }
 
-        // Update only active particles
+        // Update particles and remove dead ones
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const particle = this.particles[i];
             particle.update();
@@ -182,8 +286,9 @@ class GameObject {
     }
 
     draw(ctx) {
-        if (this.fadeProgress >= 1 || this.isOffscreen) return;
+        if (this.isDead || this.fadeProgress >= 1 || this.isOffscreen) return;
 
+        // Batch transformations
         ctx.save();
         ctx.translate(this.x, this.y);
         
@@ -194,10 +299,16 @@ class GameObject {
         if (this.sliced) {
             ctx.rotate(this.angle);
             const breakOffset = this.breakProgress * 30 * this.breakDirection;
+            
+            // Draw first half
             ctx.translate(breakOffset, 0);
             this.drawFruit(ctx, this.width, this.height);
+            
+            // Draw second half
             ctx.translate(-breakOffset * 2, 0);
             this.drawFruit(ctx, this.width, this.height);
+            
+            // Draw break line
             ctx.strokeStyle = '#ffffff';
             ctx.lineWidth = 2;
             ctx.beginPath();
@@ -210,56 +321,102 @@ class GameObject {
         }
         ctx.restore();
 
-        // Draw only active particles
-        for (const particle of this.particles) {
-            particle.draw(ctx);
+        // Batch particle drawing by color
+        if (this.particles.length > 0) {
+            const particlesByColor = new Map();
+            
+            // Group particles by color
+            for (const particle of this.particles) {
+                if (!particlesByColor.has(particle.color)) {
+                    particlesByColor.set(particle.color, []);
+                }
+                particlesByColor.get(particle.color).push(particle);
+            }
+            
+            // Draw particles in batches by color
+            ctx.save();
+            for (const [color, particles] of particlesByColor) {
+                ctx.fillStyle = color;
+                for (const particle of particles) {
+                    ctx.globalAlpha = particle.life;
+                    ctx.beginPath();
+                    ctx.arc(particle.x, particle.y, 2, 0, TWO_PI);
+                    ctx.fill();
+                }
+            }
+            ctx.restore();
         }
     }
 
     drawFruit(ctx, width, height) {
+        const fruitType = this.getFruitTypeName();
         switch(this.fruitType) {
-            case 0: this.drawApple(ctx, width, height); break;
-            case 1: this.drawBanana(ctx, width, height); break;
-            case 2: this.drawOrange(ctx, width, height); break;
-            case 3: this.drawGrape(ctx, width, height); break;
-            case 4: this.drawPineapple(ctx, width, height); break;
-            case 5: this.drawStarfruit(ctx, width, height); break;
-            case 6: this.drawDragonfruit(ctx, width, height); break;
-            case 7: this.drawWatermelon(ctx, width, height); break;
-            case 8: this.drawPomegranate(ctx, width, height); break;
-            case 9: this.drawPassionfruit(ctx, width, height); break;
-            case 10: this.drawLychee(ctx, width, height); break;
-            case 11: this.drawPapaya(ctx, width, height); break;
-            case 12: this.drawMangosteen(ctx, width, height); break;
-            case 13: this.drawKiwi(ctx, width, height); break;
-            case 14: this.drawPersimmon(ctx, width, height); break;
+            case FruitType.APPLE:
+                this.drawApple(ctx, width, height);
+                break;
+            case FruitType.BANANA:
+                this.drawBanana(ctx, width, height);
+                break;
+            case FruitType.ORANGE:
+                this.drawOrange(ctx, width, height);
+                break;
+            case FruitType.GRAPE:
+                this.drawGrape(ctx, width, height);
+                break;
+            case FruitType.PINEAPPLE:
+                this.drawPineapple(ctx, width, height);
+                break;
+            case FruitType.STARFRUIT:
+                this.drawStarfruit(ctx, width, height);
+                break;
+            case FruitType.DRAGONFRUIT:
+                this.drawDragonfruit(ctx, width, height);
+                break;
+            case FruitType.WATERMELON:
+                this.drawWatermelon(ctx, width, height);
+                break;
+            case FruitType.POMEGRANATE:
+                this.drawPomegranate(ctx, width, height);
+                break;
+            case FruitType.PASSIONFRUIT:
+                this.drawPassionfruit(ctx, width, height);
+                break;
+            case FruitType.LYCHEE:
+                this.drawLychee(ctx, width, height);
+                break;
+            case FruitType.PAPAYA:
+                this.drawPapaya(ctx, width, height);
+                break;
+            case FruitType.MANGOSTEEN:
+                this.drawMangosteen(ctx, width, height);
+                break;
+            case FruitType.KIWI:
+                this.drawKiwi(ctx, width, height);
+                break;
+            case FruitType.PERSIMMON:
+                this.drawPersimmon(ctx, width, height);
+                break;
         }
     }
 
     drawApple(ctx, width, height) {
-        ctx.save();
-        ctx.fillStyle = this.sliced ? this.colors.apple.main + '80' : this.colors.apple.main;
+        const { main, stem, leaf } = this.colors;
+        
+        // Draw apple body
+        ctx.fillStyle = main;
         ctx.beginPath();
-        ctx.ellipse(0, 0, width/2, height/2, 0, 0, Math.PI*2);
-        ctx.bezierCurveTo(width*0.3, height*0.5, -width*0.3, height*0.5, 0, height*0.35);
+        ctx.ellipse(0, 0, width/2, height/2, 0, 0, Math.PI * 2);
         ctx.fill();
-
-        ctx.strokeStyle = this.colors.apple.stem;
-        ctx.lineWidth = 3;
+        
+        // Draw stem
+        ctx.fillStyle = stem;
+        ctx.fillRect(-2, -height/2, 4, 8);
+        
+        // Draw leaf
+        ctx.fillStyle = leaf;
         ctx.beginPath();
-        ctx.moveTo(0, -height/2.1);
-        ctx.bezierCurveTo(5, -height/2.3, 8, -height/2, 0, -height/2 + 10);
-        ctx.stroke();
-
-        ctx.fillStyle = this.colors.apple.leaf;
-        ctx.save();
-        ctx.translate(width/7, -height/2.4);
-        ctx.rotate(-Math.PI/8);
-        ctx.beginPath();
-        ctx.ellipse(0, 0, 10, 5, 0, 0, Math.PI*2);
+        ctx.ellipse(4, -height/2 + 4, 6, 3, Math.PI/4, 0, Math.PI * 2);
         ctx.fill();
-        ctx.restore();
-        ctx.restore();
     }
 
     drawBanana(ctx, width, height) {
@@ -342,7 +499,7 @@ class GameObject {
         ctx.ellipse(0, 0, width/2.3, height/2, 0, 0, Math.PI*2);
         ctx.fill();
 
-        ctx.strokeStyle = this.colors.pineapple.skin;
+        ctx.strokeStyle = this.colors.pineapple.leaf;
         ctx.lineWidth = 1.5;
         for (let i = -width/2.3; i < width/2.3; i += 8) {
             ctx.beginPath();
@@ -359,7 +516,7 @@ class GameObject {
         // Leaves
         ctx.save();
         ctx.translate(0, -height/2);
-        ctx.fillStyle = this.colors.pineapple.leaves;
+        ctx.fillStyle = this.colors.pineapple.leaf;
         for (let i = 0; i < 6; i++) {
             ctx.save();
             ctx.rotate((i-2.5)*Math.PI/8);
@@ -404,7 +561,7 @@ class GameObject {
         ctx.ellipse(0, 0, width/2, height/2, 0, 0, Math.PI*2);
         ctx.fill();
 
-        ctx.fillStyle = this.colors.dragonfruit.scales;
+        ctx.fillStyle = this.colors.dragonfruit.leaf;
         for (let i = 0; i < 6; i++) {
             ctx.save();
             const angle = (i * Math.PI * 2) / 6;
@@ -426,7 +583,7 @@ class GameObject {
 
     drawWatermelon(ctx, width, height) {
         ctx.save();
-        ctx.fillStyle = this.colors.watermelon.rind;
+        ctx.fillStyle = this.colors.watermelon.stem;
         ctx.beginPath();
         ctx.ellipse(0, 0, width/2, height/2, 0, 0, Math.PI*2);
         ctx.fill();
@@ -436,7 +593,7 @@ class GameObject {
         ctx.ellipse(0, 0, width/2-5, height/2-5, 0, 0, Math.PI*2);
         ctx.fill();
 
-        ctx.fillStyle = this.colors.watermelon.seeds;
+        ctx.fillStyle = this.colors.watermelon.leaf;
         this.fruitData.seeds.forEach(({angle, dist}) => {
             ctx.beginPath();
             ctx.ellipse(Math.cos(angle)*dist, Math.sin(angle)*dist, 2, 4, angle, 0, Math.PI*2);
@@ -487,7 +644,7 @@ class GameObject {
         ctx.arc(0, 0, width/2, 0, Math.PI*2);
         ctx.fill();
         // Spiky skin
-        ctx.strokeStyle = this.colors.lychee.skin;
+        ctx.strokeStyle = this.colors.lychee.leaf;
         for (let i = 0; i < 18; i++) {
             const a = i*Math.PI*2/18;
             ctx.beginPath();
@@ -511,7 +668,7 @@ class GameObject {
         ctx.ellipse(0, 0, width/2, height/2, 0, 0, Math.PI*2);
         ctx.fill();
 
-        ctx.fillStyle = this.colors.papaya.seeds;
+        ctx.fillStyle = this.colors.papaya.leaf;
         this.fruitData.seeds.forEach(({angle, radius}) => {
             ctx.beginPath();
             ctx.arc(Math.cos(angle)*radius, Math.sin(angle)*radius, 1.4, 0, Math.PI*2);
@@ -533,7 +690,7 @@ class GameObject {
         ctx.beginPath();
         ctx.arc(0, 0, width/2, 0, Math.PI*2);
         ctx.fill();
-        ctx.fillStyle = this.colors.mangosteen.cap;
+        ctx.fillStyle = this.colors.mangosteen.leaf;
         ctx.beginPath();
         ctx.arc(0, -height/2 + 7, width/4, 0, Math.PI*2);
         ctx.fill();
@@ -553,7 +710,7 @@ class GameObject {
         ctx.ellipse(0, 0, width/2, height/2.3, 0, 0, Math.PI*2);
         ctx.fill();
 
-        ctx.strokeStyle = this.colors.kiwi.skin;
+        ctx.strokeStyle = this.colors.kiwi.leaf;
         ctx.lineWidth = 2;
         ctx.stroke();
 
@@ -573,7 +730,7 @@ class GameObject {
         ctx.ellipse(0, 0, width/2, height/2.4, 0, 0, Math.PI*2);
         ctx.fill();
         // Cap
-        ctx.fillStyle = this.colors.persimmon.cap;
+        ctx.fillStyle = this.colors.persimmon.leaf;
         for (let i = 0; i < 4; i++) {
             ctx.save();
             ctx.rotate(i*Math.PI/2);
@@ -592,123 +749,110 @@ class GameObject {
     }
 
     createSliceParticles() {
-        // Create more particles for a more dramatic effect
-        for (let i = 0; i < 20; i++) {
-            const angle = (Math.random() * Math.PI * 2);
+        if (!Game.particlePool) {
+            console.warn('Particle pool not initialized');
+            return;
+        }
+
+        const particleCount = 10;
+        for (let i = 0; i < particleCount; i++) {
+            const angle = (Math.random() * TWO_PI);
             const speed = Math.random() * 8 + 2;
-            this.particles.push(new Particle(
+            const particle = Game.particlePool.get(
                 this.x,
                 this.y,
                 Math.cos(angle) * speed,
                 Math.sin(angle) * speed,
-                this.color // Use the object's color for particles
-            ));
+                this.colors.main
+            );
+            this.particles.push(particle);
         }
+    }
+
+    getFruitTypeName() {
+        return Object.keys(FruitType).find(key => FruitType[key] === this.fruitType).toLowerCase();
     }
 }
 
 class Particle {
-    constructor(x, y, vx, vy, color = '#ffffff') {
+    constructor() {
+        this.reset(0, 0, 0, 0, '#ffffff');
+    }
+
+    reset(x, y, vx, vy, color) {
         this.x = x;
         this.y = y;
         this.vx = vx;
         this.vy = vy;
-        this.life = 1;
-        this.size = Math.random() * 4 + 2; // Varied particle sizes
         this.color = color;
-        this.rotation = Math.random() * Math.PI * 2;
-        this.rotationSpeed = (Math.random() - 0.5) * 0.2;
+        this.life = 1;
     }
 
     update() {
         this.x += this.vx;
         this.y += this.vy;
-        this.vy += 0.1; // Add gravity to particles
+        this.vy += 0.1; // gravity
         this.life -= 0.02;
-        this.rotation += this.rotationSpeed;
-        this.size *= 0.98; // Particles shrink over time
-    }
-
-    draw(ctx) {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.rotation);
-        ctx.fillStyle = this.color.replace(')', `, ${this.life})`).replace('rgb', 'rgba');
-        ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
-        ctx.restore();
     }
 }
 
 class SlashEffect {
-    constructor(startX, startY, endX, endY) {
-        this.startX = startX;
-        this.startY = startY;
-        this.endX = endX;
-        this.endY = endY;
+    constructor(x, y, angle) {
+        this.x = x;
+        this.y = y;
+        this.angle = angle;
         this.life = 1;
-        this.width = 8;
         this.particles = [];
-        this.createParticles();
-    }
-
-    createParticles() {
-        const dx = this.endX - this.startX;
-        const dy = this.endY - this.startY;
-        const length = Math.sqrt(dx * dx + dy * dy);
-        const angle = Math.atan2(dy, dx);
         
-        // Create particles along the slash line
-        const numParticles = Math.floor(length / 10);
-        for (let i = 0; i < numParticles; i++) {
-            const t = i / numParticles;
-            const x = this.startX + dx * t;
-            const y = this.startY + dy * t;
-            
-            // Add some randomness to particle positions
-            const offset = (Math.random() - 0.5) * 10;
-            const perpX = Math.cos(angle + Math.PI/2) * offset;
-            const perpY = Math.sin(angle + Math.PI/2) * offset;
-            
-            this.particles.push({
-                x: x + perpX,
-                y: y + perpY,
-                size: Math.random() * 4 + 2,
-                life: 1,
-                speed: Math.random() * 2 + 1,
-                angle: angle + (Math.random() - 0.5) * Math.PI/4
-            });
+        // Create particles using pool
+        if (Game.particlePool) {
+            const particleCount = 8;
+            for (let i = 0; i < particleCount; i++) {
+                const spread = (Math.random() - 0.5) * Math.PI / 4;
+                const speed = Math.random() * 5 + 3;
+                const particle = Game.particlePool.get(
+                    this.x,
+                    this.y,
+                    Math.cos(this.angle + spread) * speed,
+                    Math.sin(this.angle + spread) * speed,
+                    '#ffffff'
+                );
+                this.particles.push(particle);
+            }
         }
     }
 
     update() {
         this.life -= 0.05;
-        this.particles.forEach(p => {
-            p.life -= 0.05;
-            p.x += Math.cos(p.angle) * p.speed;
-            p.y += Math.sin(p.angle) * p.speed;
-            p.size *= 0.95;
-        });
-        this.particles = this.particles.filter(p => p.life > 0);
+        // Update particles
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            const particle = this.particles[i];
+            particle.update();
+            if (particle.life <= 0) {
+                this.particles.splice(i, 1);
+            }
+        }
     }
 
     draw(ctx) {
-        // Draw the main slash line
-        ctx.save();
-        ctx.strokeStyle = `rgba(255, 255, 255, ${this.life * 0.8})`;
-        ctx.lineWidth = this.width * this.life;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(this.startX, this.startY);
-        ctx.lineTo(this.endX, this.endY);
-        ctx.stroke();
+        if (this.life <= 0) return;
 
+        ctx.save();
+        ctx.globalAlpha = this.life;
+        
         // Draw particles
-        this.particles.forEach(p => {
-            ctx.fillStyle = `rgba(255, 255, 255, ${p.life * 0.8})`;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-            ctx.fill();
-        });
+        if (this.particles.length > 0) {
+            ctx.save();
+            for (const particle of this.particles) {
+                ctx.globalAlpha = particle.life;
+                ctx.fillStyle = particle.color;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, 2, 0, TWO_PI);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+        
         ctx.restore();
     }
 }
@@ -716,78 +860,75 @@ class SlashEffect {
 class SoundManager {
     constructor() {
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        this.audioContext.suspend(); // Start suspended until user interaction
+        this.audioContext.suspend();
+        
+        // Precompute buffers
+        this.swishBuffer = this.createSwishSound();
+        this.squishBuffer = this.createSquishSound();
+        
+        // Precompute reverb buffers
+        this.swishReverb = this.createReverbBuffer(0.3, 0.1);
+        this.squishReverb = this.createReverbBuffer(0.2, 0.05);
     }
 
-    resume() {
-        if (this.audioContext.state === 'suspended') {
-            this.audioContext.resume();
+    createReverbBuffer(duration, decay) {
+        const buffer = this.audioContext.createBuffer(2, this.audioContext.sampleRate * duration, this.audioContext.sampleRate);
+        for (let channel = 0; channel < 2; channel++) {
+            const data = buffer.getChannelData(channel);
+            for (let i = 0; i < buffer.length; i++) {
+                data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.audioContext.sampleRate * decay));
+            }
         }
+        return buffer;
     }
 
     createSwishSound() {
         const duration = 0.2;
-        const sampleRate = this.audioContext.sampleRate;
-        const buffer = this.audioContext.createBuffer(2, sampleRate * duration, sampleRate);
-        
+        const buffer = this.audioContext.createBuffer(2, this.audioContext.sampleRate * duration, this.audioContext.sampleRate);
         for (let channel = 0; channel < 2; channel++) {
             const data = buffer.getChannelData(channel);
             for (let i = 0; i < buffer.length; i++) {
-                const t = i / sampleRate;
-                // Create a whooshing sound with frequency sweep
-                const freq = 2000 - (t / duration) * 1500; // Sweep from 2000Hz to 500Hz
-                const pan = channel === 0 ? -0.5 : 0.5; // Stereo separation
-                data[i] = Math.sin(2 * Math.PI * freq * t) * Math.exp(-4 * t) * 0.3;
+                const t = i / buffer.length;
+                const freq = 2000 - (1500 * t);
+                data[i] = Math.sin(2 * Math.PI * freq * t) * Math.exp(-3 * t);
             }
         }
-        
         return buffer;
     }
 
     createSquishSound() {
         const duration = 0.15;
-        const sampleRate = this.audioContext.sampleRate;
-        const buffer = this.audioContext.createBuffer(2, sampleRate * duration, sampleRate);
-        
+        const buffer = this.audioContext.createBuffer(2, this.audioContext.sampleRate * duration, this.audioContext.sampleRate);
         for (let channel = 0; channel < 2; channel++) {
             const data = buffer.getChannelData(channel);
             for (let i = 0; i < buffer.length; i++) {
-                const t = i / sampleRate;
-                // Create a squishy sound with noise and frequency modulation
-                const noise = (Math.random() * 2 - 1) * 0.5;
-                const freq = 800 + Math.sin(t * 50) * 200; // Modulated frequency
-                const envelope = Math.exp(-8 * t); // Quick decay
-                data[i] = (noise + Math.sin(2 * Math.PI * freq * t)) * envelope * 0.4;
+                const t = i / buffer.length;
+                const noise = Math.random() * 2 - 1;
+                const freq = 800 + Math.sin(t * Math.PI * 4) * 400;
+                data[i] = (noise * 0.3 + Math.sin(2 * Math.PI * freq * t) * 0.7) * Math.exp(-5 * t);
             }
         }
-        
         return buffer;
     }
 
     playSwish() {
         this.resume();
         const source = this.audioContext.createBufferSource();
-        source.buffer = this.createSwishSound();
+        source.buffer = this.swishBuffer;
         
-        // Add stereo panning
         const panner = this.audioContext.createStereoPanner();
-        panner.pan.value = (Math.random() - 0.5) * 0.5; // Random pan position
+        panner.pan.value = (Math.random() - 0.5) * 0.5;
         
-        // Add subtle reverb
         const reverb = this.audioContext.createConvolver();
-        const reverbBuffer = this.audioContext.createBuffer(2, this.audioContext.sampleRate * 0.3, this.audioContext.sampleRate);
-        for (let channel = 0; channel < 2; channel++) {
-            const data = reverbBuffer.getChannelData(channel);
-            for (let i = 0; i < reverbBuffer.length; i++) {
-                data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.audioContext.sampleRate * 0.1));
-            }
-        }
-        reverb.buffer = reverbBuffer;
+        reverb.buffer = this.swishReverb;
         
-        // Connect nodes
-        source.connect(panner);
-        panner.connect(reverb);
-        reverb.connect(this.audioContext.destination);
+        const gain = this.audioContext.createGain();
+        gain.gain.value = 0.3;
+        
+        source.connect(panner)
+            .connect(reverb)
+            .connect(gain)
+            .connect(this.audioContext.destination);
         
         source.start();
     }
@@ -795,29 +936,29 @@ class SoundManager {
     playSquish() {
         this.resume();
         const source = this.audioContext.createBufferSource();
-        source.buffer = this.createSquishSound();
+        source.buffer = this.squishBuffer;
         
-        // Add stereo panning
         const panner = this.audioContext.createStereoPanner();
-        panner.pan.value = (Math.random() - 0.5) * 0.3; // Less panning for squish
+        panner.pan.value = (Math.random() - 0.5) * 0.3;
         
-        // Add subtle reverb
         const reverb = this.audioContext.createConvolver();
-        const reverbBuffer = this.audioContext.createBuffer(2, this.audioContext.sampleRate * 0.2, this.audioContext.sampleRate);
-        for (let channel = 0; channel < 2; channel++) {
-            const data = reverbBuffer.getChannelData(channel);
-            for (let i = 0; i < reverbBuffer.length; i++) {
-                data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.audioContext.sampleRate * 0.05));
-            }
-        }
-        reverb.buffer = reverbBuffer;
+        reverb.buffer = this.squishReverb;
         
-        // Connect nodes
-        source.connect(panner);
-        panner.connect(reverb);
-        reverb.connect(this.audioContext.destination);
+        const gain = this.audioContext.createGain();
+        gain.gain.value = 0.4;
+        
+        source.connect(panner)
+            .connect(reverb)
+            .connect(gain)
+            .connect(this.audioContext.destination);
         
         source.start();
+    }
+
+    resume() {
+        if (this.audioContext.state === 'suspended') {
+            this.audioContext.resume();
+        }
     }
 }
 
@@ -861,6 +1002,11 @@ class Game {
         this.resize();
         this.setupEventListeners();
         this.gameLoop();
+        this.particlePool = new ParticlePool(1000);
+        Game.particlePool = this.particlePool; // Ensure static access is available
+        this.lastFrameTime = performance.now();
+        this.frameCount = 0;
+        this.fps = 0;
     }
 
     resize() {
@@ -954,86 +1100,67 @@ class Game {
         this.objects.push(new GameObject(x, y, 'orbital', this.speedMultiplier, this.centerX, this.centerY));
     }
 
-    checkSlice(startX, startY, endX, endY) {
-        let sliced = false;
-        const newObjects = [];
-        
-        // Play swish sound for the slice motion
+    checkSlice(x, y) {
+        const sliceAngle = Math.atan2(y - this.centerY, x - this.centerX);
+        let sliceFound = false;
+
+        // Play swish sound for slice motion
         this.soundManager.playSwish();
-        
-        for (let i = this.objects.length - 1; i >= 0; i--) {
-            const obj = this.objects[i];
-            if (!obj.sliced && this.lineIntersectsObject(startX, startY, endX, endY, obj)) {
+
+        for (const obj of this.objects) {
+            if (obj.sliced) continue;
+
+            const dx = obj.x - this.centerX;
+            const dy = obj.y - this.centerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx);
+            const angleDiff = Math.abs(angle - sliceAngle);
+
+            if (distance < 100 && angleDiff < Math.PI / 4) {
                 obj.sliced = true;
-                sliced = true;
+                sliceFound = true;
                 
-                // Create particles for slice effect
-                for (let j = 0; j < 10; j++) {
-                    const angle = Math.random() * Math.PI * 2;
-                    const speed = Math.random() * 5 + 2;
-                    obj.particles.push({
-                        x: obj.x,
-                        y: obj.y,
-                        vx: Math.cos(angle) * speed,
-                        vy: Math.sin(angle) * speed,
-                        life: 1
-                    });
-                }
-                
-                // Create smaller pieces
-                const pieces = obj.breakIntoPieces();
-                if (pieces.length > 0) {
-                    newObjects.push(...pieces);
-                }
-                
-                // Play squish sound when fruit is hit
+                // Play squish sound for fruit hit
                 this.soundManager.playSquish();
+
+                // Create slice particles using pool
+                const particleCount = 10;
+                for (let i = 0; i < particleCount; i++) {
+                    const angle = (Math.random() * Math.PI * 2);
+                    const speed = Math.random() * 8 + 2;
+                    const particle = this.particlePool.get(
+                        obj.x,
+                        obj.y,
+                        Math.cos(angle) * speed,
+                        Math.sin(angle) * speed,
+                        obj.colors.main
+                    );
+                    obj.particles.push(particle);
+                }
+
+                const pieces = obj.breakIntoPieces();
+                this.objects.push(...pieces);
             }
         }
-        
-        // Add new pieces to objects array
-        this.objects.push(...newObjects);
-        
-        return sliced;
-    }
 
-    lineIntersectsRect(x1, y1, x2, y2, rx, ry, rw, rh) {
-        const left = rx;
-        const right = rx + rw;
-        const top = ry;
-        const bottom = ry + rh;
-
-        // Check if line intersects with any of the rectangle's edges
-        return this.lineIntersectsLine(x1, y1, x2, y2, left, top, right, top) ||
-               this.lineIntersectsLine(x1, y1, x2, y2, right, top, right, bottom) ||
-               this.lineIntersectsLine(x1, y1, x2, y2, right, bottom, left, bottom) ||
-               this.lineIntersectsLine(x1, y1, x2, y2, left, bottom, left, top);
-    }
-
-    lineIntersectsLine(x1, y1, x2, y2, x3, y3, x4, y4) {
-        const denominator = ((y4 - y3) * (x2 - x1)) - ((x4 - x3) * (y2 - y1));
-        if (denominator === 0) return false;
-
-        const ua = (((x4 - x3) * (y1 - y3)) - ((y4 - y3) * (x1 - x3))) / denominator;
-        const ub = (((x2 - x1) * (y1 - y3)) - ((y2 - y1) * (x1 - x3))) / denominator;
-
-        return ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1;
-    }
-
-    lineIntersectsObject(x1, y1, x2, y2, obj) {
-        const rx = obj.x - obj.width/2;
-        const ry = obj.y - obj.height/2;
-        const rw = obj.width;
-        const rh = obj.height;
-        return this.lineIntersectsRect(x1, y1, x2, y2, rx, ry, rw, rh);
+        return sliceFound;
     }
 
     update() {
+        const currentTime = performance.now();
+        this.frameCount++;
+        
+        if (currentTime - this.lastFrameTime >= 1000) {
+            this.fps = this.frameCount;
+            this.frameCount = 0;
+            this.lastFrameTime = currentTime;
+        }
+
         // Update center point periodically
-        const currentTime = Date.now();
-        if (currentTime - this.lastCenterMove >= this.centerMoveInterval) {
+        const currentTime2 = Date.now();
+        if (currentTime2 - this.lastCenterMove >= this.centerMoveInterval) {
             this.updateCenterPoint();
-            this.lastCenterMove = currentTime;
+            this.lastCenterMove = currentTime2;
         }
 
         // Update difficulty
@@ -1051,15 +1178,16 @@ class Game {
 
         this.spawnObject();
         
-        // Update objects
-        this.objects = this.objects.filter(obj => {
+        // Update objects and remove dead ones
+        for (let i = this.objects.length - 1; i >= 0; i--) {
+            const obj = this.objects[i];
             obj.update();
-            return !obj.sliced && 
-                   obj.x > -100 && 
-                   obj.x < this.canvas.width + 100 && 
-                   obj.y > -100 && 
-                   obj.y < this.canvas.height + 100;
-        });
+            if (obj.isDead) {
+                // Clear particles before removing object
+                obj.particles.length = 0;
+                this.objects.splice(i, 1);
+            }
+        }
 
         // Update slash effects
         this.slashEffects = this.slashEffects.filter(effect => {
@@ -1078,6 +1206,11 @@ class Game {
         
         // Draw slash effects
         this.slashEffects.forEach(effect => effect.draw(this.ctx));
+        
+        // Draw FPS counter
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = '16px Arial';
+        this.ctx.fillText(`FPS: ${this.fps}`, 10, 20);
     }
 
     gameLoop() {
