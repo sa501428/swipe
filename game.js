@@ -29,69 +29,21 @@ class GameObject {
         
         // Fruit-specific colors
         this.colors = {
-            apple: {
-                main: '#ff0000',
-                stem: '#663300',
-                leaf: '#00ff00'
-            },
-            banana: {
-                main: '#ffff00',
-                stem: '#663300'
-            },
-            orange: {
-                main: '#ffa500',
-                stem: '#663300'
-            },
-            grape: {
-                main: '#800080',
-                stem: '#663300'
-            },
-            pineapple: {
-                main: '#ffd700',
-                stem: '#228B22',
-                skin: '#8B4513'
-            },
-            starfruit: {
-                main: '#ffd700',
-                stem: '#663300'
-            },
-            dragonfruit: {
-                main: '#ff69b4',
-                scales: '#00ff00'
-            },
-            watermelon: {
-                main: '#ff0000',
-                rind: '#228B22',
-                seeds: '#000000'
-            },
-            pomegranate: {
-                main: '#ff0000',
-                stem: '#663300'
-            },
-            passionfruit: {
-                main: '#800080',
-                stem: '#663300'
-            },
-            lychee: {
-                main: '#ff0000',
-                stem: '#663300'
-            },
-            papaya: {
-                main: '#ffa500',
-                stem: '#663300'
-            },
-            mangosteen: {
-                main: '#800080',
-                stem: '#663300'
-            },
-            kiwi: {
-                main: '#90EE90',
-                skin: '#8B4513'
-            },
-            persimmon: {
-                main: '#ffa500',
-                stem: '#663300'
-            }
+            apple: { main: '#ff2d2d', stem: '#5a350c', leaf: '#2ecc40' },
+            banana: { main: '#ffe135', stem: '#866c09', tip: '#d6b70a' },
+            orange: { main: '#ff9500', stem: '#ad6407', leaf: '#aeea00' },
+            grape: { main: '#6a1b9a', stem: '#68401a' },
+            pineapple: { main: '#ffdd55', stem: '#238b22', skin: '#a9743a', leaves: '#238b22' },
+            starfruit: { main: '#ffe659', stem: '#af8508' },
+            dragonfruit: { main: '#fc46aa', scales: '#57eb64', dots: '#000000' },
+            watermelon: { main: '#fc4c4e', rind: '#188835', seeds: '#222' },
+            pomegranate: { main: '#d9032e', stem: '#683214' },
+            passionfruit: { main: '#85266d', stem: '#745329' },
+            lychee: { main: '#e04947', stem: '#7f3523', skin: '#f8a4a4' },
+            papaya: { main: '#ffb23d', stem: '#8d5413', seeds: '#262200' },
+            mangosteen: { main: '#491f7e', stem: '#755217', cap: '#94fa7c' },
+            kiwi: { main: '#b0de4c', skin: '#725c27', seeds: '#222' },
+            persimmon: { main: '#fd6d1f', stem: '#70510e', cap: '#a1ce58' }
         };
         
         // Initialize velocity based on position relative to center
@@ -178,159 +130,173 @@ class GameObject {
         this.particles = this.particles.filter(p => p.life > 0);
     }
 
-    drawFruit(ctx) {
-        const width = this.width;
-        const height = this.height;
-        
+    drawFruit(ctx, width, height) {
         switch(this.fruitType) {
-            case 0: // Apple
-                this.drawApple(ctx, width, height);
-                break;
-            case 1: // Banana
-                this.drawBanana(ctx, width, height);
-                break;
-            case 2: // Orange
-                this.drawOrange(ctx, width, height);
-                break;
-            case 3: // Grape
-                this.drawGrape(ctx, width, height);
-                break;
-            case 4: // Pineapple
-                this.drawPineapple(ctx, width, height);
-                break;
-            case 5: // Starfruit
-                this.drawStarfruit(ctx, width, height);
-                break;
-            case 6: // Dragonfruit
-                this.drawDragonfruit(ctx, width, height);
-                break;
-            case 7: // Watermelon
-                this.drawWatermelon(ctx, width, height);
-                break;
-            case 8: // Pomegranate
-                this.drawPomegranate(ctx, width, height);
-                break;
-            case 9: // Passionfruit
-                this.drawPassionfruit(ctx, width, height);
-                break;
-            case 10: // Lychee
-                this.drawLychee(ctx, width, height);
-                break;
-            case 11: // Papaya
-                this.drawPapaya(ctx, width, height);
-                break;
-            case 12: // Mangosteen
-                this.drawMangosteen(ctx, width, height);
-                break;
-            case 13: // Kiwi
-                this.drawKiwi(ctx, width, height);
-                break;
-            case 14: // Persimmon
-                this.drawPersimmon(ctx, width, height);
-                break;
+            case 0: this.drawApple(ctx, width, height); break;
+            case 1: this.drawBanana(ctx, width, height); break;
+            case 2: this.drawOrange(ctx, width, height); break;
+            case 3: this.drawGrape(ctx, width, height); break;
+            case 4: this.drawPineapple(ctx, width, height); break;
+            case 5: this.drawStarfruit(ctx, width, height); break;
+            case 6: this.drawDragonfruit(ctx, width, height); break;
+            case 7: this.drawWatermelon(ctx, width, height); break;
+            case 8: this.drawPomegranate(ctx, width, height); break;
+            case 9: this.drawPassionfruit(ctx, width, height); break;
+            case 10: this.drawLychee(ctx, width, height); break;
+            case 11: this.drawPapaya(ctx, width, height); break;
+            case 12: this.drawMangosteen(ctx, width, height); break;
+            case 13: this.drawKiwi(ctx, width, height); break;
+            case 14: this.drawPersimmon(ctx, width, height); break;
         }
     }
 
     drawApple(ctx, width, height) {
+        ctx.save();
         ctx.fillStyle = this.sliced ? this.colors.apple.main + '80' : this.colors.apple.main;
         ctx.beginPath();
-        ctx.ellipse(0, 0, width/2, height/2, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, width/2, height/2, 0, 0, Math.PI*2);
+        ctx.bezierCurveTo(width*0.3, height*0.5, -width*0.3, height*0.5, 0, height*0.35);
         ctx.fill();
-        
-        // Stem
+
         ctx.strokeStyle = this.colors.apple.stem;
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.moveTo(0, -height/2);
-        ctx.quadraticCurveTo(width/4, -height/2 - 10, width/4, -height/2 - 15);
+        ctx.moveTo(0, -height/2.1);
+        ctx.bezierCurveTo(5, -height/2.3, 8, -height/2, 0, -height/2 + 10);
         ctx.stroke();
-        
-        // Leaf
+
         ctx.fillStyle = this.colors.apple.leaf;
+        ctx.save();
+        ctx.translate(width/7, -height/2.4);
+        ctx.rotate(-Math.PI/8);
         ctx.beginPath();
-        ctx.ellipse(width/4, -height/2 - 10, 5, 8, Math.PI/4, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, 10, 5, 0, 0, Math.PI*2);
         ctx.fill();
+        ctx.restore();
+        ctx.restore();
     }
 
     drawBanana(ctx, width, height) {
+        ctx.save();
         ctx.fillStyle = this.sliced ? this.colors.banana.main + '80' : this.colors.banana.main;
         ctx.beginPath();
-        ctx.ellipse(0, 0, width/2, height/2, Math.PI/4, 0, Math.PI * 2);
+        ctx.moveTo(-width/2, height/8);
+        ctx.bezierCurveTo(
+            -width/3, -height/2, width/2, -height/2, width/2, height/8
+        );
+        ctx.bezierCurveTo(
+            width/3, height/1.7, -width/3, height/1.7, -width/2, height/8
+        );
+        ctx.closePath();
         ctx.fill();
-        
-        // Stem
+
+        ctx.fillStyle = this.colors.banana.tip;
+        ctx.beginPath();
+        ctx.arc(-width/2+2, height/8, 4, 0, Math.PI*2);
+        ctx.fill();
+
         ctx.strokeStyle = this.colors.banana.stem;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(width/2, height/8);
+        ctx.lineTo(width/2+5, height/8-5);
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    drawOrange(ctx, width, height) {
+        ctx.save();
+        ctx.fillStyle = this.sliced ? this.colors.orange.main + '80' : this.colors.orange.main;
+        ctx.beginPath();
+        ctx.arc(0, 0, width/2, 0, Math.PI*2);
+        ctx.fill();
+
+        ctx.strokeStyle = '#fff9a5';
+        for (let i = 0; i < 6; i++) {
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.arc(0, 0, width/2.2, i * Math.PI/3, (i+0.5)*Math.PI/3);
+            ctx.stroke();
+        }
+        ctx.strokeStyle = this.colors.orange.stem;
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(-width/3, -height/3);
-        ctx.quadraticCurveTo(-width/2, -height/2, -width/2 - 5, -height/2 - 5);
+        ctx.moveTo(0, -height/2);
+        ctx.lineTo(0, -height/2-8);
         ctx.stroke();
+        ctx.fillStyle = this.colors.orange.leaf;
+        ctx.beginPath();
+        ctx.ellipse(-width/7, -height/2.1, 7, 3, 0, 0, Math.PI*2);
+        ctx.fill();
+        ctx.restore();
     }
 
     drawGrape(ctx, width, height) {
-        const clusterSize = 5;
-        const grapeSize = width / (clusterSize * 2);
-        
-        for (let i = 0; i < clusterSize; i++) {
-            for (let j = 0; j < clusterSize; j++) {
-                const x = (i - clusterSize/2) * grapeSize * 1.5;
-                const y = (j - clusterSize/2) * grapeSize * 1.5;
-                
-                ctx.fillStyle = this.sliced ? this.colors.grape.main + '80' : this.colors.grape.main;
-                ctx.beginPath();
-                ctx.arc(x, y, grapeSize, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-        
-        // Stem
+        ctx.save();
+        const grapes = [
+            [-7,7],[0,0],[7,7],[-4,-4],[4,-4]
+        ];
+        grapes.forEach(([gx, gy], i) => {
+            ctx.fillStyle = this.sliced ? this.colors.grape.main + '80' : this.colors.grape.main;
+            ctx.beginPath();
+            ctx.arc(gx, gy, width/6, 0, Math.PI*2);
+            ctx.fill();
+        });
         ctx.strokeStyle = this.colors.grape.stem;
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(0, -height/2);
-        ctx.quadraticCurveTo(0, -height/2 - 10, 0, -height/2 - 15);
+        ctx.lineTo(0, -height/2-10);
         ctx.stroke();
+        ctx.restore();
     }
 
     drawPineapple(ctx, width, height) {
-        // Main body
+        ctx.save();
         ctx.fillStyle = this.sliced ? this.colors.pineapple.main + '80' : this.colors.pineapple.main;
         ctx.beginPath();
-        ctx.ellipse(0, 0, width/2, height/2, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, width/2.3, height/2, 0, 0, Math.PI*2);
         ctx.fill();
-        
-        // Skin pattern
+
         ctx.strokeStyle = this.colors.pineapple.skin;
-        ctx.lineWidth = 2;
-        for (let i = -width/2; i < width/2; i += 10) {
+        ctx.lineWidth = 1.5;
+        for (let i = -width/2.3; i < width/2.3; i += 8) {
             ctx.beginPath();
             ctx.moveTo(i, -height/2);
             ctx.lineTo(i, height/2);
             ctx.stroke();
         }
-        
-        // Top leaves
-        ctx.fillStyle = this.colors.pineapple.stem;
-        for (let i = 0; i < 5; i++) {
-            const angle = (i * Math.PI * 2) / 5;
-            ctx.save();
-            ctx.translate(0, -height/2);
-            ctx.rotate(angle);
+        for (let j = -height/2; j < height/2; j += 8) {
             ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(0, -15);
-            ctx.lineTo(5, -10);
+            ctx.moveTo(-width/2.3, j);
+            ctx.lineTo(width/2.3, j);
+            ctx.stroke();
+        }
+        // Leaves
+        ctx.save();
+        ctx.translate(0, -height/2);
+        ctx.fillStyle = this.colors.pineapple.leaves;
+        for (let i = 0; i < 6; i++) {
+            ctx.save();
+            ctx.rotate((i-2.5)*Math.PI/8);
+            ctx.beginPath();
+            ctx.moveTo(0,0);
+            ctx.lineTo(0,-17-Math.random()*6);
+            ctx.lineTo(7,0);
             ctx.closePath();
             ctx.fill();
             ctx.restore();
         }
+        ctx.restore();
+        ctx.restore();
     }
 
     drawStarfruit(ctx, width, height) {
+        ctx.save();
         ctx.fillStyle = this.sliced ? this.colors.starfruit.main + '80' : this.colors.starfruit.main;
         ctx.beginPath();
         for (let i = 0; i < 5; i++) {
-            const angle = (i * Math.PI * 2) / 5;
+            const angle = (i * Math.PI * 2) / 5 - Math.PI/2;
             const x = Math.cos(angle) * width/2;
             const y = Math.sin(angle) * height/2;
             if (i === 0) ctx.moveTo(x, y);
@@ -338,223 +304,223 @@ class GameObject {
         }
         ctx.closePath();
         ctx.fill();
-        
-        // Stem
         ctx.strokeStyle = this.colors.starfruit.stem;
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(0, -height/2);
         ctx.lineTo(0, -height/2 - 10);
         ctx.stroke();
+        ctx.restore();
     }
 
     drawDragonfruit(ctx, width, height) {
-        // Main body
+        ctx.save();
         ctx.fillStyle = this.sliced ? this.colors.dragonfruit.main + '80' : this.colors.dragonfruit.main;
         ctx.beginPath();
-        ctx.ellipse(0, 0, width/2, height/2, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, width/2, height/2, 0, 0, Math.PI*2);
         ctx.fill();
-        
-        // Scales
+
         ctx.fillStyle = this.colors.dragonfruit.scales;
-        for (let i = 0; i < 8; i++) {
-            const angle = (i * Math.PI * 2) / 8;
-            const x = Math.cos(angle) * width/3;
-            const y = Math.sin(angle) * height/3;
+        for (let i = 0; i < 6; i++) {
+            ctx.save();
+            const angle = (i * Math.PI * 2) / 6;
+            ctx.rotate(angle);
             ctx.beginPath();
-            ctx.arc(x, y, 5, 0, Math.PI * 2);
+            ctx.ellipse(width/3, 0, 7, 2, angle, 0, Math.PI*2);
+            ctx.fill();
+            ctx.restore();
+        }
+        ctx.fillStyle = this.colors.dragonfruit.dots;
+        for (let i = 0; i < 12; i++) {
+            const a = Math.random() * Math.PI*2;
+            const r = Math.random() * width/2.2;
+            ctx.beginPath();
+            ctx.arc(Math.cos(a)*r, Math.sin(a)*r, 1, 0, Math.PI*2);
             ctx.fill();
         }
+        ctx.restore();
     }
 
     drawWatermelon(ctx, width, height) {
+        ctx.save();
         // Rind
         ctx.fillStyle = this.colors.watermelon.rind;
         ctx.beginPath();
-        ctx.ellipse(0, 0, width/2, height/2, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, width/2, height/2, 0, 0, Math.PI*2);
         ctx.fill();
-        
         // Flesh
         ctx.fillStyle = this.sliced ? this.colors.watermelon.main + '80' : this.colors.watermelon.main;
         ctx.beginPath();
-        ctx.ellipse(0, 0, width/2 - 5, height/2 - 5, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, width/2-5, height/2-5, 0, 0, Math.PI*2);
         ctx.fill();
-        
         // Seeds
         ctx.fillStyle = this.colors.watermelon.seeds;
-        for (let i = 0; i < 5; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const distance = Math.random() * (width/4);
-            const x = Math.cos(angle) * distance;
-            const y = Math.sin(angle) * distance;
+        for (let i = 0; i < 7; i++) {
+            const angle = Math.random() * Math.PI*2;
+            const dist = Math.random() * (width/4);
             ctx.beginPath();
-            ctx.ellipse(x, y, 2, 4, angle, 0, Math.PI * 2);
+            ctx.ellipse(Math.cos(angle)*dist, Math.sin(angle)*dist, 2, 4, angle, 0, Math.PI*2);
             ctx.fill();
         }
+        ctx.restore();
     }
 
     drawPomegranate(ctx, width, height) {
-        // Main body
+        ctx.save();
         ctx.fillStyle = this.sliced ? this.colors.pomegranate.main + '80' : this.colors.pomegranate.main;
         ctx.beginPath();
-        ctx.arc(0, 0, width/2, 0, Math.PI * 2);
+        ctx.arc(0, 0, width/2, 0, Math.PI*2);
         ctx.fill();
-        
-        // Bumpy texture
-        ctx.strokeStyle = this.colors.pomegranate.main + '80';
-        for (let i = 0; i < 8; i++) {
-            const angle = (i * Math.PI * 2) / 8;
-            const x = Math.cos(angle) * width/3;
-            const y = Math.sin(angle) * height/3;
-            ctx.beginPath();
-            ctx.arc(x, y, 3, 0, Math.PI * 2);
-            ctx.stroke();
-        }
-        
-        // Stem
-        ctx.strokeStyle = this.colors.pomegranate.stem;
-        ctx.lineWidth = 2;
+        // "Crown"
+        ctx.fillStyle = this.colors.pomegranate.stem;
+        ctx.save();
+        ctx.translate(0, -height/2+2);
         ctx.beginPath();
-        ctx.moveTo(0, -height/2);
-        ctx.lineTo(0, -height/2 - 10);
-        ctx.stroke();
+        for (let i = 0; i < 5; i++) {
+            ctx.lineTo(Math.sin(i*1.257)*7, -Math.cos(i*1.257)*6);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+        ctx.restore();
     }
 
     drawPassionfruit(ctx, width, height) {
-        // Main body
+        ctx.save();
         ctx.fillStyle = this.sliced ? this.colors.passionfruit.main + '80' : this.colors.passionfruit.main;
         ctx.beginPath();
-        ctx.arc(0, 0, width/2, 0, Math.PI * 2);
+        ctx.arc(0, 0, width/2, 0, Math.PI*2);
         ctx.fill();
-        
-        // Wrinkly texture
-        ctx.strokeStyle = this.colors.passionfruit.main + '40';
-        for (let i = 0; i < 12; i++) {
-            const angle = (i * Math.PI * 2) / 12;
-            ctx.beginPath();
-            ctx.arc(0, 0, width/2 - i * 2, angle, angle + Math.PI/6);
-            ctx.stroke();
-        }
-        
-        // Stem
         ctx.strokeStyle = this.colors.passionfruit.stem;
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(0, -height/2);
         ctx.lineTo(0, -height/2 - 8);
         ctx.stroke();
+        ctx.restore();
     }
 
     drawLychee(ctx, width, height) {
-        // Main body
+        ctx.save();
         ctx.fillStyle = this.sliced ? this.colors.lychee.main + '80' : this.colors.lychee.main;
         ctx.beginPath();
-        ctx.arc(0, 0, width/2, 0, Math.PI * 2);
+        ctx.arc(0, 0, width/2, 0, Math.PI*2);
         ctx.fill();
-        
-        // Bumpy texture
-        ctx.strokeStyle = this.colors.lychee.main + '40';
-        for (let i = 0; i < 15; i++) {
-            const angle = (i * Math.PI * 2) / 15;
-            const x = Math.cos(angle) * width/3;
-            const y = Math.sin(angle) * height/3;
+        // Spiky skin
+        ctx.strokeStyle = this.colors.lychee.skin;
+        for (let i = 0; i < 18; i++) {
+            const a = i*Math.PI*2/18;
             ctx.beginPath();
-            ctx.arc(x, y, 2, 0, Math.PI * 2);
+            ctx.moveTo(Math.cos(a)*(width/2-2), Math.sin(a)*(height/2-2));
+            ctx.lineTo(Math.cos(a)*(width/2+2), Math.sin(a)*(height/2+2));
             ctx.stroke();
         }
-        
-        // Stem
         ctx.strokeStyle = this.colors.lychee.stem;
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(0, -height/2);
         ctx.lineTo(0, -height/2 - 8);
         ctx.stroke();
+        ctx.restore();
     }
 
     drawPapaya(ctx, width, height) {
-        // Main body
+        ctx.save();
         ctx.fillStyle = this.sliced ? this.colors.papaya.main + '80' : this.colors.papaya.main;
         ctx.beginPath();
-        ctx.ellipse(0, 0, width/2, height/2, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, width/2, height/2, 0, 0, Math.PI*2);
         ctx.fill();
-        
-        // Stem
+        // Seeds
+        ctx.fillStyle = this.colors.papaya.seeds;
+        for (let i = 0; i < 9; i++) {
+            const a = Math.PI/2 + (Math.random()-0.5)*1;
+            const r = height/7 + Math.random()*height/10;
+            ctx.beginPath();
+            ctx.arc(Math.cos(a)*r, Math.sin(a)*r, 1.4, 0, Math.PI*2);
+            ctx.fill();
+        }
         ctx.strokeStyle = this.colors.papaya.stem;
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(0, -height/2);
         ctx.lineTo(0, -height/2 - 10);
         ctx.stroke();
+        ctx.restore();
     }
 
     drawMangosteen(ctx, width, height) {
-        // Main body
+        ctx.save();
         ctx.fillStyle = this.sliced ? this.colors.mangosteen.main + '80' : this.colors.mangosteen.main;
         ctx.beginPath();
-        ctx.arc(0, 0, width/2, 0, Math.PI * 2);
+        ctx.arc(0, 0, width/2, 0, Math.PI*2);
         ctx.fill();
-        
-        // Stem
+        ctx.fillStyle = this.colors.mangosteen.cap;
+        ctx.beginPath();
+        ctx.arc(0, -height/2 + 7, width/4, 0, Math.PI*2);
+        ctx.fill();
         ctx.strokeStyle = this.colors.mangosteen.stem;
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(0, -height/2);
-        ctx.lineTo(0, -height/2 - 8);
+        ctx.moveTo(0, -height/2 + 2);
+        ctx.lineTo(0, -height/2 - 6);
         ctx.stroke();
+        ctx.restore();
     }
 
     drawKiwi(ctx, width, height) {
-        // Main body
+        ctx.save();
         ctx.fillStyle = this.sliced ? this.colors.kiwi.main + '80' : this.colors.kiwi.main;
         ctx.beginPath();
-        ctx.arc(0, 0, width/2, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, width/2, height/2.3, 0, 0, Math.PI*2);
         ctx.fill();
-        
-        // Seeds
-        ctx.fillStyle = this.colors.kiwi.skin;
-        for (let i = 0; i < 20; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const distance = Math.random() * (width/3);
-            const x = Math.cos(angle) * distance;
-            const y = Math.sin(angle) * distance;
+        ctx.strokeStyle = this.colors.kiwi.skin;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = this.colors.kiwi.seeds;
+        for (let i = 0; i < 18; i++) {
+            const a = i*Math.PI*2/18;
             ctx.beginPath();
-            ctx.arc(x, y, 1, 0, Math.PI * 2);
+            ctx.arc(Math.cos(a)*(width/4), Math.sin(a)*(height/5), 1, 0, Math.PI*2);
             ctx.fill();
         }
+        ctx.restore();
     }
 
     drawPersimmon(ctx, width, height) {
-        // Main body
+        ctx.save();
         ctx.fillStyle = this.sliced ? this.colors.persimmon.main + '80' : this.colors.persimmon.main;
         ctx.beginPath();
-        ctx.ellipse(0, 0, width/2, height/2, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, width/2, height/2.4, 0, 0, Math.PI*2);
         ctx.fill();
-        
-        // Stem
+        // Cap
+        ctx.fillStyle = this.colors.persimmon.cap;
+        for (let i = 0; i < 4; i++) {
+            ctx.save();
+            ctx.rotate(i*Math.PI/2);
+            ctx.beginPath();
+            ctx.ellipse(0, -height/2.5, 8, 3, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.restore();
+        }
         ctx.strokeStyle = this.colors.persimmon.stem;
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(0, -height/2);
-        ctx.lineTo(0, -height/2 - 8);
+        ctx.moveTo(0, -height/2.3);
+        ctx.lineTo(0, -height/2.3 - 7);
         ctx.stroke();
+        ctx.restore();
     }
 
     draw(ctx) {
         ctx.save();
         ctx.translate(this.x, this.y);
-        
         if (this.sliced) {
             ctx.rotate(this.angle);
             const breakOffset = this.breakProgress * 30 * this.breakDirection;
-            
-            // Draw the sliced fruit
             ctx.translate(breakOffset, 0);
-            this.drawFruit(ctx);
+            this.drawFruit(ctx, this.width, this.height);
             ctx.translate(-breakOffset * 2, 0);
-            this.drawFruit(ctx);
-            
-            // Draw break line
+            this.drawFruit(ctx, this.width, this.height);
             ctx.strokeStyle = '#ffffff';
             ctx.lineWidth = 2;
             ctx.beginPath();
@@ -563,14 +529,10 @@ class GameObject {
             ctx.stroke();
         } else {
             ctx.rotate(this.angle);
-            this.drawFruit(ctx);
+            this.drawFruit(ctx, this.width, this.height);
         }
-        
         ctx.restore();
-
-        this.particles.forEach(particle => {
-            particle.draw(ctx);
-        });
+        this.particles.forEach(particle => particle.draw(ctx));
     }
 
     createSliceParticles() {
