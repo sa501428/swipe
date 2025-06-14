@@ -360,6 +360,434 @@ class GameObject {
             }
         }
     }
+
+    drawApple(ctx, width, height) {
+        const { main, stem, leaf } = this.colors;
+        
+        // Draw apple body
+        ctx.fillStyle = main;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, width/2, height/2, 0, 0, TWO_PI);
+        ctx.fill();
+        
+        // Draw stem
+        ctx.fillStyle = stem;
+        ctx.fillRect(-2, -height/2, 4, 8);
+        
+        // Draw leaf
+        ctx.fillStyle = leaf;
+        ctx.beginPath();
+        ctx.ellipse(4, -height/2 + 4, 6, 3, Math.PI/4, 0, TWO_PI);
+        ctx.fill();
+    }
+
+    drawBanana(ctx, width, height) {
+        const { main, stem, leaf, tip } = this.colors;
+        
+        // Draw banana body
+        ctx.fillStyle = main;
+        ctx.beginPath();
+        ctx.moveTo(-width/2, height/8);
+        ctx.bezierCurveTo(
+            -width/3, -height/2, width/2, -height/2, width/2, height/8
+        );
+        ctx.bezierCurveTo(
+            width/3, height/1.7, -width/3, height/1.7, -width/2, height/8
+        );
+        ctx.closePath();
+        ctx.fill();
+        
+        // Draw stem
+        ctx.fillStyle = stem;
+        ctx.fillRect(-2, -height/2, 4, 8);
+        
+        // Draw tip
+        if (tip) {
+            ctx.fillStyle = tip;
+            ctx.beginPath();
+            ctx.arc(-width/2+2, height/8, 4, 0, TWO_PI);
+            ctx.fill();
+        }
+    }
+
+    drawOrange(ctx, width, height) {
+        const { main, stem, leaf } = this.colors;
+        
+        // Draw orange body
+        ctx.fillStyle = main;
+        ctx.beginPath();
+        ctx.arc(0, 0, width/2, 0, TWO_PI);
+        ctx.fill();
+
+        // Draw segments
+        ctx.strokeStyle = '#fff9a5';
+        for (let i = 0; i < 6; i++) {
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.arc(0, 0, width/2.2, i * Math.PI/3, (i+0.5)*Math.PI/3);
+            ctx.stroke();
+        }
+
+        // Draw stem and leaf
+        ctx.strokeStyle = stem;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, -height/2);
+        ctx.lineTo(0, -height/2-8);
+        ctx.stroke();
+
+        ctx.fillStyle = leaf;
+        ctx.beginPath();
+        ctx.ellipse(-width/7, -height/2.1, 7, 3, 0, 0, TWO_PI);
+        ctx.fill();
+    }
+
+    drawGrape(ctx, width, height) {
+        const { main, stem } = this.colors;
+        
+        // Draw grapes
+        const grapes = [
+            [-width/4, -height/4], [width/4, -height/4],
+            [-width/3, 0], [0, 0], [width/3, 0],
+            [-width/4, height/4], [width/4, height/4]
+        ];
+        
+        grapes.forEach(([x, y]) => {
+            ctx.fillStyle = main;
+            ctx.beginPath();
+            ctx.arc(x, y, width/6, 0, TWO_PI);
+            ctx.fill();
+        });
+
+        // Draw stem
+        ctx.strokeStyle = stem;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, -height/2);
+        ctx.lineTo(0, -height/2-10);
+        ctx.stroke();
+    }
+
+    drawPineapple(ctx, width, height) {
+        const { main, stem, leaf, skin } = this.colors;
+        
+        // Draw pineapple body
+        ctx.fillStyle = main;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, width/2.3, height/2, 0, 0, TWO_PI);
+        ctx.fill();
+
+        // Draw skin pattern
+        ctx.strokeStyle = skin;
+        ctx.lineWidth = 1.5;
+        for (let i = -width/2.3; i < width/2.3; i += 8) {
+            ctx.beginPath();
+            ctx.moveTo(i, -height/2);
+            ctx.lineTo(i, height/2);
+            ctx.stroke();
+        }
+        for (let j = -height/2; j < height/2; j += 8) {
+            ctx.beginPath();
+            ctx.moveTo(-width/2.3, j);
+            ctx.lineTo(width/2.3, j);
+            ctx.stroke();
+        }
+
+        // Draw leaves
+        ctx.fillStyle = leaf;
+        ctx.save();
+        ctx.translate(0, -height/2);
+        for (let i = 0; i < 6; i++) {
+            ctx.save();
+            ctx.rotate((i-2.5)*Math.PI/8);
+            ctx.beginPath();
+            ctx.moveTo(0,0);
+            ctx.lineTo(0,-17-Math.random()*6);
+            ctx.lineTo(7,0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+        ctx.restore();
+    }
+
+    drawStarfruit(ctx, width, height) {
+        const { main, stem } = this.colors;
+        
+        // Draw starfruit body
+        ctx.fillStyle = main;
+        ctx.beginPath();
+        for (let i = 0; i < 5; i++) {
+            const angle = (i * Math.PI * 2) / 5 - Math.PI/2;
+            const x = Math.cos(angle) * width/2;
+            const y = Math.sin(angle) * height/2;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fill();
+
+        // Draw stem
+        ctx.strokeStyle = stem;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, -height/2);
+        ctx.lineTo(0, -height/2 - 10);
+        ctx.stroke();
+    }
+
+    drawDragonfruit(ctx, width, height) {
+        const { main, stem, leaf, dots } = this.colors;
+        
+        // Draw dragonfruit body
+        ctx.fillStyle = main;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, width/2, height/2, 0, 0, TWO_PI);
+        ctx.fill();
+        
+        // Draw dots
+        if (dots) {
+            ctx.fillStyle = dots;
+            for (let i = 0; i < 20; i++) {
+                const angle = Math.random() * TWO_PI;
+                const radius = Math.random() * (width/3);
+                ctx.beginPath();
+                ctx.arc(
+                    Math.cos(angle) * radius,
+                    Math.sin(angle) * radius,
+                    2,
+                    0,
+                    TWO_PI
+                );
+                ctx.fill();
+            }
+        }
+    }
+
+    drawWatermelon(ctx, width, height) {
+        const { main, stem, leaf, rind, seeds } = this.colors;
+        
+        // Draw rind
+        ctx.fillStyle = rind;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, width/2, height/2, 0, 0, TWO_PI);
+        ctx.fill();
+
+        // Draw flesh
+        ctx.fillStyle = main;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, width/2-5, height/2-5, 0, 0, TWO_PI);
+        ctx.fill();
+
+        // Draw seeds
+        if (seeds) {
+            ctx.fillStyle = seeds;
+            for (let i = 0; i < 15; i++) {
+                const angle = Math.random() * TWO_PI;
+                const radius = Math.random() * (width/3);
+                ctx.beginPath();
+                ctx.ellipse(
+                    Math.cos(angle) * radius,
+                    Math.sin(angle) * radius,
+                    2,
+                    4,
+                    angle,
+                    0,
+                    TWO_PI
+                );
+                ctx.fill();
+            }
+        }
+    }
+
+    drawPomegranate(ctx, width, height) {
+        const { main, stem } = this.colors;
+        
+        // Draw body
+        ctx.fillStyle = main;
+        ctx.beginPath();
+        ctx.arc(0, 0, width/2, 0, TWO_PI);
+        ctx.fill();
+
+        // Draw crown
+        ctx.fillStyle = stem;
+        ctx.save();
+        ctx.translate(0, -height/2+2);
+        ctx.beginPath();
+        for (let i = 0; i < 5; i++) {
+            ctx.lineTo(Math.sin(i*1.257)*7, -Math.cos(i*1.257)*6);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+    }
+
+    drawPassionfruit(ctx, width, height) {
+        const { main, stem } = this.colors;
+        
+        // Draw body
+        ctx.fillStyle = main;
+        ctx.beginPath();
+        ctx.arc(0, 0, width/2, 0, TWO_PI);
+        ctx.fill();
+
+        // Draw stem
+        ctx.strokeStyle = stem;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, -height/2);
+        ctx.lineTo(0, -height/2 - 8);
+        ctx.stroke();
+    }
+
+    drawLychee(ctx, width, height) {
+        const { main, stem, leaf, skin } = this.colors;
+        
+        // Draw body
+        ctx.fillStyle = main;
+        ctx.beginPath();
+        ctx.arc(0, 0, width/2, 0, TWO_PI);
+        ctx.fill();
+
+        // Draw spiky skin
+        ctx.strokeStyle = skin;
+        for (let i = 0; i < 18; i++) {
+            const a = i*Math.PI*2/18;
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(a)*(width/2-2), Math.sin(a)*(height/2-2));
+            ctx.lineTo(Math.cos(a)*(width/2+2), Math.sin(a)*(height/2+2));
+            ctx.stroke();
+        }
+
+        // Draw stem
+        ctx.strokeStyle = stem;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, -height/2);
+        ctx.lineTo(0, -height/2 - 8);
+        ctx.stroke();
+    }
+
+    drawPapaya(ctx, width, height) {
+        const { main, stem, leaf, seeds } = this.colors;
+        
+        // Draw body
+        ctx.fillStyle = main;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, width/2, height/2, 0, 0, TWO_PI);
+        ctx.fill();
+
+        // Draw seeds
+        if (seeds) {
+            ctx.fillStyle = seeds;
+            for (let i = 0; i < 20; i++) {
+                const angle = Math.random() * TWO_PI;
+                const radius = Math.random() * (width/3);
+                ctx.beginPath();
+                ctx.arc(
+                    Math.cos(angle) * radius,
+                    Math.sin(angle) * radius,
+                    1.4,
+                    0,
+                    TWO_PI
+                );
+                ctx.fill();
+            }
+        }
+
+        // Draw stem
+        ctx.strokeStyle = stem;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, -height/2);
+        ctx.lineTo(0, -height/2 - 10);
+        ctx.stroke();
+    }
+
+    drawMangosteen(ctx, width, height) {
+        const { main, stem, leaf, cap } = this.colors;
+        
+        // Draw body
+        ctx.fillStyle = main;
+        ctx.beginPath();
+        ctx.arc(0, 0, width/2, 0, TWO_PI);
+        ctx.fill();
+
+        // Draw cap
+        if (cap) {
+            ctx.fillStyle = cap;
+            ctx.beginPath();
+            ctx.arc(0, -height/2 + 7, width/4, 0, TWO_PI);
+            ctx.fill();
+        }
+
+        // Draw stem
+        ctx.strokeStyle = stem;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, -height/2 + 2);
+        ctx.lineTo(0, -height/2 - 6);
+        ctx.stroke();
+    }
+
+    drawKiwi(ctx, width, height) {
+        const { main, stem, leaf, seeds } = this.colors;
+        
+        // Draw kiwi body
+        ctx.fillStyle = main;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, width/2, height/2, 0, 0, TWO_PI);
+        ctx.fill();
+        
+        // Draw seeds
+        if (seeds) {
+            ctx.fillStyle = seeds;
+            for (let i = 0; i < 30; i++) {
+                const angle = Math.random() * TWO_PI;
+                const radius = Math.random() * (width/3);
+                ctx.beginPath();
+                ctx.arc(
+                    Math.cos(angle) * radius,
+                    Math.sin(angle) * radius,
+                    1,
+                    0,
+                    TWO_PI
+                );
+                ctx.fill();
+            }
+        }
+    }
+
+    drawPersimmon(ctx, width, height) {
+        const { main, stem, leaf, cap } = this.colors;
+        
+        // Draw body
+        ctx.fillStyle = main;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, width/2, height/2.4, 0, 0, TWO_PI);
+        ctx.fill();
+
+        // Draw cap
+        if (cap) {
+            ctx.fillStyle = cap;
+            for (let i = 0; i < 4; i++) {
+                ctx.save();
+                ctx.rotate(i*Math.PI/2);
+                ctx.beginPath();
+                ctx.ellipse(0, -height/2.5, 8, 3, 0, 0, TWO_PI);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // Draw stem
+        ctx.strokeStyle = stem;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, -height/2.3);
+        ctx.lineTo(0, -height/2.3 - 7);
+        ctx.stroke();
+    }
 }
 
 class Particle {
@@ -571,18 +999,16 @@ class Game {
         window.addEventListener('resize', () => this.resizeCanvas());
         
         // Initialize game state
-        this.objects = [];
-        this.slashEffects = [];
-        this.touchStart = null;
-        this.centerX = this.canvas.width / 2;
-        this.centerY = this.canvas.height / 2;
-        this.lastCenterMove = Date.now();
-        this.centerMoveInterval = 5000;
-        this.speedMultiplier = 1;
-        this.lastSpeedIncrease = Date.now();
-        this.speedIncreaseInterval = 60000;
+        this.lastSpawnTime = 0;
+        this.spawnInterval = 1000; // Spawn a fruit every second
+        this.fruits = [];
         this.score = 0;
-        this.scoreElement = document.getElementById('scoreValue');
+        this.isGameOver = false;
+        this.lastFrameTime = performance.now();
+        this.frameCount = 0;
+        this.fps = 0;
+        this.fpsUpdateInterval = 500; // Update FPS every 500ms
+        this.lastFpsUpdate = performance.now();
         this.backgroundColors = [
             '#ffb6c1', // Light pink
             '#ffc0cb', // Pink
@@ -643,124 +1069,92 @@ class Game {
         this.ctx.fillStyle = this.backgroundColors[this.currentBackgroundIndex];
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Draw center point
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.beginPath();
-        this.ctx.arc(this.centerX, this.centerY, 5, 0, TWO_PI);
-        this.ctx.fill();
-
-        // Draw all objects
-        for (const obj of this.objects) {
-            obj.draw(this.ctx);
-        }
+        // Draw all fruits
+        this.fruits.forEach(fruit => fruit.draw(this.ctx));
 
         // Draw slash effects
-        for (const effect of this.slashEffects) {
-            effect.draw(this.ctx);
-        }
+        this.slashEffects.forEach(effect => effect.draw(this.ctx));
 
         // Draw FPS counter
-        this.ctx.fillStyle = '#ffffff';
+        this.ctx.fillStyle = 'white';
         this.ctx.font = '16px Arial';
         this.ctx.fillText(`FPS: ${this.fps}`, 10, 20);
+
+        // Draw score
+        this.ctx.fillText(`Score: ${this.score}`, 10, 40);
     }
 
-    spawnObject() {
-        const angle = Math.random() * TWO_PI;
-        const distance = 300;
-        const x = this.centerX + Math.cos(angle) * distance;
-        const y = this.centerY + Math.sin(angle) * distance;
-        
-        const type = Math.floor(Math.random() * 15); // 15 different fruits
-        const size = Math.random() * 0.5 + 0.75;
-        
-        this.objects.push(new GameObject(
+    spawnFruit() {
+        const fruitTypes = Object.values(FruitType);
+        const randomType = fruitTypes[Math.floor(Math.random() * fruitTypes.length)];
+        const x = Math.random() * (this.canvas.width - 100) + 50;
+        const y = this.canvas.height + 50;
+        const velocity = {
+            x: (Math.random() - 0.5) * 200,
+            y: -Math.random() * 500 - 500
+        };
+        const rotation = Math.random() * Math.PI * 2;
+        const rotationSpeed = (Math.random() - 0.5) * 0.1;
+
+        const fruit = new GameObject(
             x,
             y,
-            type,
-            this.speedMultiplier,
-            this.centerX,
-            this.centerY,
-            size
-        ));
+            randomType,
+            velocity,
+            rotation,
+            rotationSpeed
+        );
+        this.fruits.push(fruit);
     }
 
-    update() {
-        const currentTime = performance.now();
-        this.frameCount++;
-        
-        if (currentTime - this.lastFrameTime >= 1000) {
-            this.fps = this.frameCount;
-            this.frameCount = 0;
-            this.lastFrameTime = currentTime;
-        }
+    update(deltaTime) {
+        // Update all fruits
+        for (let i = this.fruits.length - 1; i >= 0; i--) {
+            const fruit = this.fruits[i];
+            fruit.update(deltaTime);
 
-        // Periodic cleanup
-        if (currentTime - this.lastCleanup >= this.cleanupInterval) {
-            this.cleanup();
-            this.lastCleanup = currentTime;
-        }
-
-        // Spawn new objects
-        if (Math.random() < 0.02) {
-            this.spawnObject();
-        }
-
-        // Update center point periodically
-        const currentTime2 = Date.now();
-        if (currentTime2 - this.lastCenterMove >= this.centerMoveInterval) {
-            this.updateCenterPoint();
-            this.lastCenterMove = currentTime2;
-        }
-
-        // Increase speed over time
-        if (currentTime2 - this.lastSpeedIncrease >= this.speedIncreaseInterval) {
-            this.speedMultiplier += 0.2;
-            this.lastSpeedIncrease = currentTime2;
-            
-            // Change background color
-            this.currentBackgroundIndex = (this.currentBackgroundIndex + 1) % this.backgroundColors.length;
-        }
-
-        // Update objects and remove dead ones
-        for (let i = this.objects.length - 1; i >= 0; i--) {
-            const obj = this.objects[i];
-            obj.update();
-            if (obj.isDead) {
-                // Return particles to pool
-                for (const particle of obj.particles) {
-                    if (Game.particlePool) {
-                        Game.particlePool.release(particle);
-                    }
-                }
-                obj.particles.length = 0;
-                this.objects.splice(i, 1);
+            // Remove fruits that are off screen
+            if (fruit.position.y > this.canvas.height + 100) {
+                this.fruits.splice(i, 1);
             }
         }
 
         // Update slash effects
-        this.slashEffects = this.slashEffects.filter(effect => {
-            effect.update();
-            return effect.life > 0;
-        });
-    }
-
-    cleanup() {
-        // Clean up dead objects
-        this.objects = this.objects.filter(obj => !obj.isDead);
-        
-        // Clean up expired slash effects
-        this.slashEffects = this.slashEffects.filter(effect => effect.life > 0);
-        
-        // Reset particle pool if it's getting too full
-        if (this.particlePool && this.particlePool.activeParticles > 800) {
-            this.particlePool.reset();
+        for (let i = this.slashEffects.length - 1; i >= 0; i--) {
+            const effect = this.slashEffects[i];
+            effect.update(deltaTime);
+            if (effect.isDead) {
+                this.slashEffects.splice(i, 1);
+            }
         }
     }
 
     gameLoop() {
-        this.update();
+        if (this.isGameOver) return;
+
+        const currentTime = performance.now();
+        const deltaTime = currentTime - this.lastFrameTime;
+        this.lastFrameTime = currentTime;
+
+        // Update FPS counter
+        this.frameCount++;
+        if (currentTime - this.lastFpsUpdate >= this.fpsUpdateInterval) {
+            this.fps = Math.round((this.frameCount * 1000) / (currentTime - this.lastFpsUpdate));
+            this.frameCount = 0;
+            this.lastFpsUpdate = currentTime;
+        }
+
+        // Spawn new fruits
+        if (currentTime - this.lastSpawnTime >= this.spawnInterval) {
+            this.spawnFruit();
+            this.lastSpawnTime = currentTime;
+        }
+
+        // Update and draw all game objects
+        this.update(deltaTime);
         this.draw();
+
+        // Schedule next frame
         requestAnimationFrame(() => this.gameLoop());
     }
 
@@ -802,7 +1196,7 @@ class Game {
     }
 
     checkSlice(x, y) {
-        for (const obj of this.objects) {
+        for (const obj of this.fruits) {
             if (obj.sliced) continue;
             
             const dx = obj.x - x;
