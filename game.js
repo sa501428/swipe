@@ -1,8 +1,8 @@
 class GameObject {
-    constructor(x, y, type, speedMultiplier) {
+    constructor(x, y, type, speedMultiplier, centerX, centerY) {
         this.x = x;
         this.y = y;
-        this.type = type; // 'flying' or 'tossed'
+        this.type = type; // 'flying' or 'tossed' or 'orbital'
         this.width = 40;
         this.height = 40;
         this.baseSpeed = 3; // Reduced from 5 to 3
@@ -15,19 +15,28 @@ class GameObject {
         this.breakProgress = 0; // 0 to 1 for breaking animation
         this.breakDirection = Math.random() > 0.5 ? 1 : -1;
         
+        // Gravitational properties
+        this.centerX = centerX;
+        this.centerY = centerY;
+        this.velocityX = 0;
+        this.velocityY = 0;
+        this.gravity = 0.2 * this.speedMultiplier;
+        
         // Random color generation
         const hue = Math.random() * 360;
         this.color = `hsl(${hue}, 70%, 60%)`;
         this.slicedColor = `hsl(${hue}, 70%, 40%)`; // Darker version for sliced state
         
-        if (type === 'tossed') {
-            this.velocityY = -12 * this.speedMultiplier; // Reduced from -15
-            this.velocityX = (Math.random() - 0.5) * 6 * this.speedMultiplier; // Reduced from 8
-            this.gravity = 0.4 * this.speedMultiplier; // Reduced from 0.5
-        } else {
-            this.velocityX = Math.random() > 0.5 ? this.speed : -this.speed;
-            this.velocityY = 0;
-        }
+        // Initialize velocity based on position relative to center
+        const dx = this.x - this.centerX;
+        const dy = this.y - this.centerY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx);
+        
+        // Set initial velocity perpendicular to radius for orbital motion
+        const orbitalSpeed = (Math.random() * 2 + 3) * this.speedMultiplier;
+        this.velocityX = Math.cos(angle + Math.PI/2) * orbitalSpeed;
+        this.velocityY = Math.sin(angle + Math.PI/2) * orbitalSpeed;
     }
 
     update() {
@@ -36,13 +45,24 @@ class GameObject {
             this.angle += this.breakDirection * 0.2; // Rotation during break
             this.y += 2; // Fall down while breaking
         } else {
-            if (this.type === 'tossed') {
-                this.velocityY += this.gravity;
-                this.y += this.velocityY;
-                this.x += this.velocityX;
-            } else {
-                this.x += this.velocityX;
-            }
+            // Calculate direction to center
+            const dx = this.centerX - this.x;
+            const dy = this.centerY - this.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Apply gravitational force
+            const force = this.gravity / (distance * 0.1);
+            this.velocityX += (dx / distance) * force;
+            this.velocityY += (dy / distance) * force;
+            
+            // Apply velocity
+            this.x += this.velocityX;
+            this.y += this.velocityY;
+            
+            // Add some drag to prevent excessive speeds
+            this.velocityX *= 0.99;
+            this.velocityY *= 0.99;
+            
             this.angle += this.rotationSpeed;
         }
         
@@ -229,6 +249,13 @@ class Game {
         this.lastDifficultyIncrease = Date.now();
         this.difficultyIncreaseInterval = 60000;
         this.slashEffects = []; // Add array for slash effects
+        
+        // Center point properties
+        this.centerX = this.canvas.width / 2;
+        this.centerY = this.canvas.height / 2;
+        this.lastCenterMove = Date.now();
+        this.centerMoveInterval = 30000; // 30 seconds
+        
         this.resize();
         this.setupEventListeners();
         this.gameLoop();
@@ -237,6 +264,17 @@ class Game {
     resize() {
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
+        // Update center point on resize
+        this.updateCenterPoint();
+    }
+
+    updateCenterPoint() {
+        // Calculate the middle 25% of the screen
+        const marginX = this.canvas.width * 0.375; // (100% - 25%) / 2
+        const marginY = this.canvas.height * 0.375;
+        
+        this.centerX = marginX + Math.random() * (this.canvas.width - 2 * marginX);
+        this.centerY = marginY + Math.random() * (this.canvas.height - 2 * marginY);
     }
 
     setupEventListeners() {
@@ -287,18 +325,31 @@ class Game {
         if (now - this.lastSpawnTime < this.spawnInterval) return;
         
         this.lastSpawnTime = now;
-        const type = Math.random() > 0.5 ? 'flying' : 'tossed';
+        
+        // Spawn objects from the edges
         let x, y;
-
-        if (type === 'flying') {
-            x = Math.random() > 0.5 ? -50 : this.canvas.width + 50;
-            y = Math.random() * this.canvas.height;
-        } else {
-            x = Math.random() * this.canvas.width;
-            y = this.canvas.height + 50;
+        const side = Math.floor(Math.random() * 4); // 0: top, 1: right, 2: bottom, 3: left
+        
+        switch(side) {
+            case 0: // top
+                x = Math.random() * this.canvas.width;
+                y = -50;
+                break;
+            case 1: // right
+                x = this.canvas.width + 50;
+                y = Math.random() * this.canvas.height;
+                break;
+            case 2: // bottom
+                x = Math.random() * this.canvas.width;
+                y = this.canvas.height + 50;
+                break;
+            case 3: // left
+                x = -50;
+                y = Math.random() * this.canvas.height;
+                break;
         }
-
-        this.objects.push(new GameObject(x, y, type, this.speedMultiplier));
+        
+        this.objects.push(new GameObject(x, y, 'orbital', this.speedMultiplier, this.centerX, this.centerY));
     }
 
     checkSlice(startX, startY, endX, endY) {
@@ -350,8 +401,14 @@ class Game {
     }
 
     update() {
-        // Update difficulty
+        // Update center point periodically
         const currentTime = Date.now();
+        if (currentTime - this.lastCenterMove >= this.centerMoveInterval) {
+            this.updateCenterPoint();
+            this.lastCenterMove = currentTime;
+        }
+
+        // Update difficulty
         if (currentTime - this.lastDifficultyIncrease >= this.difficultyIncreaseInterval) {
             this.speedMultiplier += 0.2;
             this.lastDifficultyIncrease = currentTime;
@@ -380,6 +437,12 @@ class Game {
     draw() {
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Draw center point (optional, for debugging)
+        // this.ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        // this.ctx.beginPath();
+        // this.ctx.arc(this.centerX, this.centerY, 20, 0, Math.PI * 2);
+        // this.ctx.fill();
         
         // Draw objects
         this.objects.forEach(obj => obj.draw(this.ctx));
