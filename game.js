@@ -1,20 +1,24 @@
 class GameObject {
-    constructor(x, y, type) {
+    constructor(x, y, type, speedMultiplier) {
         this.x = x;
         this.y = y;
         this.type = type; // 'flying' or 'tossed'
         this.width = 40;
         this.height = 40;
-        this.speed = 5;
+        this.baseSpeed = 3; // Reduced from 5 to 3
+        this.speedMultiplier = speedMultiplier;
+        this.speed = this.baseSpeed * this.speedMultiplier;
         this.angle = 0;
         this.rotationSpeed = (Math.random() - 0.5) * 0.1;
         this.sliced = false;
         this.particles = [];
+        this.breakProgress = 0; // 0 to 1 for breaking animation
+        this.breakDirection = Math.random() > 0.5 ? 1 : -1;
         
         if (type === 'tossed') {
-            this.velocityY = -15;
-            this.velocityX = (Math.random() - 0.5) * 8;
-            this.gravity = 0.5;
+            this.velocityY = -12 * this.speedMultiplier; // Reduced from -15
+            this.velocityX = (Math.random() - 0.5) * 6 * this.speedMultiplier; // Reduced from 8
+            this.gravity = 0.4 * this.speedMultiplier; // Reduced from 0.5
         } else {
             this.velocityX = Math.random() > 0.5 ? this.speed : -this.speed;
             this.velocityY = 0;
@@ -22,67 +26,187 @@ class GameObject {
     }
 
     update() {
-        if (this.type === 'tossed') {
-            this.velocityY += this.gravity;
-            this.y += this.velocityY;
-            this.x += this.velocityX;
+        if (this.sliced) {
+            this.breakProgress += 0.1; // Speed of breaking animation
+            this.angle += this.breakDirection * 0.2; // Rotation during break
+            this.y += 2; // Fall down while breaking
         } else {
-            this.x += this.velocityX;
+            if (this.type === 'tossed') {
+                this.velocityY += this.gravity;
+                this.y += this.velocityY;
+                this.x += this.velocityX;
+            } else {
+                this.x += this.velocityX;
+            }
+            this.angle += this.rotationSpeed;
         }
         
-        this.angle += this.rotationSpeed;
+        // Update particles
+        this.particles.forEach(particle => {
+            particle.update();
+        });
+        this.particles = this.particles.filter(p => p.life > 0);
     }
 
     draw(ctx) {
         ctx.save();
         ctx.translate(this.x, this.y);
-        ctx.rotate(this.angle);
         
-        // Draw object
-        ctx.fillStyle = this.sliced ? '#ff4444' : '#44ff44';
-        ctx.fillRect(-this.width/2, -this.height/2, this.width, this.height);
+        if (this.sliced) {
+            // Draw breaking animation
+            ctx.rotate(this.angle);
+            const breakOffset = this.breakProgress * 30 * this.breakDirection;
+            
+            // Draw two halves of the object
+            ctx.fillStyle = '#ff4444';
+            ctx.beginPath();
+            ctx.moveTo(-this.width/2, -this.height/2);
+            ctx.lineTo(this.width/2, -this.height/2);
+            ctx.lineTo(this.width/2, this.height/2);
+            ctx.lineTo(-this.width/2, this.height/2);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Draw break line
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(-this.width/2 + breakOffset, -this.height/2);
+            ctx.lineTo(this.width/2 + breakOffset, this.height/2);
+            ctx.stroke();
+        } else {
+            ctx.rotate(this.angle);
+            ctx.fillStyle = '#44ff44';
+            ctx.fillRect(-this.width/2, -this.height/2, this.width, this.height);
+        }
         
         ctx.restore();
 
         // Draw particles
         this.particles.forEach(particle => {
-            particle.update();
             particle.draw(ctx);
         });
-        this.particles = this.particles.filter(p => p.life > 0);
     }
 
     createSliceParticles() {
-        for (let i = 0; i < 10; i++) {
+        // Create more particles for a more dramatic effect
+        for (let i = 0; i < 20; i++) {
+            const angle = (Math.random() * Math.PI * 2);
+            const speed = Math.random() * 8 + 2;
             this.particles.push(new Particle(
                 this.x,
                 this.y,
-                (Math.random() - 0.5) * 10,
-                (Math.random() - 0.5) * 10
+                Math.cos(angle) * speed,
+                Math.sin(angle) * speed,
+                '#ff4444' // Red particles for sliced objects
             ));
         }
     }
 }
 
 class Particle {
-    constructor(x, y, vx, vy) {
+    constructor(x, y, vx, vy, color = '#ffffff') {
         this.x = x;
         this.y = y;
         this.vx = vx;
         this.vy = vy;
         this.life = 1;
-        this.size = 3;
+        this.size = Math.random() * 4 + 2; // Varied particle sizes
+        this.color = color;
+        this.rotation = Math.random() * Math.PI * 2;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.2;
     }
 
     update() {
         this.x += this.vx;
         this.y += this.vy;
+        this.vy += 0.1; // Add gravity to particles
         this.life -= 0.02;
+        this.rotation += this.rotationSpeed;
+        this.size *= 0.98; // Particles shrink over time
     }
 
     draw(ctx) {
-        ctx.fillStyle = `rgba(255, 255, 255, ${this.life})`;
-        ctx.fillRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        ctx.fillStyle = this.color.replace(')', `, ${this.life})`).replace('rgb', 'rgba');
+        ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+        ctx.restore();
+    }
+}
+
+class SlashEffect {
+    constructor(startX, startY, endX, endY) {
+        this.startX = startX;
+        this.startY = startY;
+        this.endX = endX;
+        this.endY = endY;
+        this.life = 1;
+        this.width = 8;
+        this.particles = [];
+        this.createParticles();
+    }
+
+    createParticles() {
+        const dx = this.endX - this.startX;
+        const dy = this.endY - this.startY;
+        const length = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx);
+        
+        // Create particles along the slash line
+        const numParticles = Math.floor(length / 10);
+        for (let i = 0; i < numParticles; i++) {
+            const t = i / numParticles;
+            const x = this.startX + dx * t;
+            const y = this.startY + dy * t;
+            
+            // Add some randomness to particle positions
+            const offset = (Math.random() - 0.5) * 10;
+            const perpX = Math.cos(angle + Math.PI/2) * offset;
+            const perpY = Math.sin(angle + Math.PI/2) * offset;
+            
+            this.particles.push({
+                x: x + perpX,
+                y: y + perpY,
+                size: Math.random() * 4 + 2,
+                life: 1,
+                speed: Math.random() * 2 + 1,
+                angle: angle + (Math.random() - 0.5) * Math.PI/4
+            });
+        }
+    }
+
+    update() {
+        this.life -= 0.05;
+        this.particles.forEach(p => {
+            p.life -= 0.05;
+            p.x += Math.cos(p.angle) * p.speed;
+            p.y += Math.sin(p.angle) * p.speed;
+            p.size *= 0.95;
+        });
+        this.particles = this.particles.filter(p => p.life > 0);
+    }
+
+    draw(ctx) {
+        // Draw the main slash line
+        ctx.save();
+        ctx.strokeStyle = `rgba(255, 255, 255, ${this.life * 0.8})`;
+        ctx.lineWidth = this.width * this.life;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(this.startX, this.startY);
+        ctx.lineTo(this.endX, this.endY);
+        ctx.stroke();
+
+        // Draw particles
+        this.particles.forEach(p => {
+            ctx.fillStyle = `rgba(255, 255, 255, ${p.life * 0.8})`;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        ctx.restore();
     }
 }
 
@@ -93,8 +217,13 @@ class Game {
         this.score = 0;
         this.objects = [];
         this.lastSpawnTime = 0;
-        this.spawnInterval = 1000; // 1 second
+        this.spawnInterval = 1500;
         this.touchStart = null;
+        this.gameStartTime = Date.now();
+        this.speedMultiplier = 1;
+        this.lastDifficultyIncrease = Date.now();
+        this.difficultyIncreaseInterval = 60000;
+        this.slashEffects = []; // Add array for slash effects
         this.resize();
         this.setupEventListeners();
         this.gameLoop();
@@ -121,12 +250,26 @@ class Game {
             if (!this.touchStart) return;
 
             const touch = e.touches[0];
+            const endX = touch.clientX;
+            const endY = touch.clientY;
+            
+            // Create slash effect for every swipe
+            this.slashEffects.push(new SlashEffect(
+                this.touchStart.x,
+                this.touchStart.y,
+                endX,
+                endY
+            ));
+
             this.checkSlice(
                 this.touchStart.x,
                 this.touchStart.y,
-                touch.clientX,
-                touch.clientY
+                endX,
+                endY
             );
+
+            // Update touch start for continuous swipes
+            this.touchStart = { x: endX, y: endY };
         });
 
         this.canvas.addEventListener('touchend', () => {
@@ -150,7 +293,7 @@ class Game {
             y = this.canvas.height + 50;
         }
 
-        this.objects.push(new GameObject(x, y, type));
+        this.objects.push(new GameObject(x, y, type, this.speedMultiplier));
     }
 
     checkSlice(startX, startY, endX, endY) {
@@ -202,8 +345,17 @@ class Game {
     }
 
     update() {
+        // Update difficulty
+        const currentTime = Date.now();
+        if (currentTime - this.lastDifficultyIncrease >= this.difficultyIncreaseInterval) {
+            this.speedMultiplier += 0.2;
+            this.lastDifficultyIncrease = currentTime;
+            this.spawnInterval = Math.max(500, this.spawnInterval - 100);
+        }
+
         this.spawnObject();
         
+        // Update objects
         this.objects = this.objects.filter(obj => {
             obj.update();
             return !obj.sliced && 
@@ -212,13 +364,23 @@ class Game {
                    obj.y > -100 && 
                    obj.y < this.canvas.height + 100;
         });
+
+        // Update slash effects
+        this.slashEffects = this.slashEffects.filter(effect => {
+            effect.update();
+            return effect.life > 0;
+        });
     }
 
     draw() {
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
+        // Draw objects
         this.objects.forEach(obj => obj.draw(this.ctx));
+        
+        // Draw slash effects
+        this.slashEffects.forEach(effect => effect.draw(this.ctx));
     }
 
     gameLoop() {
