@@ -1,4 +1,25 @@
 class GameObject {
+    // Static cache for fruit-specific data
+    static fruitDataCache = {
+        grape: [[-7,7],[0,0],[7,7],[-4,-4],[4,-4]],
+        watermelon: Array.from({length: 7}, () => ({
+            angle: Math.random() * Math.PI*2,
+            dist: Math.random() * 10
+        })),
+        dragonfruit: Array.from({length: 12}, () => ({
+            angle: Math.random() * Math.PI*2,
+            radius: Math.random() * 20
+        })),
+        papaya: Array.from({length: 9}, () => ({
+            angle: Math.PI/2 + (Math.random()-0.5),
+            radius: 7 + Math.random()*5
+        })),
+        kiwi: Array.from({length: 18}, (_, i) => ({
+            angle: i * Math.PI*2/18,
+            radius: 10
+        }))
+    };
+
     constructor(x, y, type, speedMultiplier, centerX, centerY, size = 1) {
         this.x = x;
         this.y = y;
@@ -46,6 +67,9 @@ class GameObject {
             persimmon: { main: '#fd6d1f', stem: '#70510e', cap: '#a1ce58' }
         };
         
+        // Pre-calculate fruit-specific data
+        this.fruitData = this.initializeFruitData();
+        
         // Initialize velocity based on position relative to center
         const dx = this.x - this.centerX;
         const dy = this.y - this.centerY;
@@ -57,20 +81,41 @@ class GameObject {
         this.velocityX = Math.cos(angle + Math.PI/2) * orbitalSpeed;
         this.velocityY = Math.sin(angle + Math.PI/2) * orbitalSpeed;
         
-        this.sliceCount = 0; // Track number of times this object has been sliced
-        this.maxSlices = 3; // Maximum number of slices before disappearing
+        this.sliceCount = 0;
+        this.maxSlices = 2; // Changed to 2 since we only want one split
+        this.fadeProgress = 0; // New property for fade effect
+        this.isFading = false; // New property to track if object is fading
+        this.isOffscreen = false;
+    }
+
+    initializeFruitData() {
+        switch(this.fruitType) {
+            case 3: // Grape
+                return { coords: GameObject.fruitDataCache.grape };
+            case 7: // Watermelon
+                return { seeds: GameObject.fruitDataCache.watermelon };
+            case 6: // Dragonfruit
+                return { dots: GameObject.fruitDataCache.dragonfruit };
+            case 11: // Papaya
+                return { seeds: GameObject.fruitDataCache.papaya };
+            case 13: // Kiwi
+                return { seeds: GameObject.fruitDataCache.kiwi };
+            default:
+                return null;
+        }
     }
 
     breakIntoPieces() {
         if (this.size <= 0.25 || this.sliceCount >= this.maxSlices) {
-            return []; // Return empty array to indicate this piece should be removed
+            this.isFading = true; // Start fading instead of creating more pieces
+            return [];
         }
-        
         const pieces = [];
-        const newSize = this.size * 0.5;
-        const spread = 5;
-        
-        for (let i = 0; i < 4; i++) {
+        const newSize = this.size * 0.7; // Slightly larger pieces
+        const spread = 8; // Increased spread for more dramatic split
+
+        // Create only 2 pieces
+        for (let i = 0; i < 2; i++) {
             const piece = new GameObject(
                 this.x,
                 this.y,
@@ -80,54 +125,95 @@ class GameObject {
                 this.centerY,
                 newSize
             );
-            
-            // Maintain the same fruit type as the parent
             piece.fruitType = this.fruitType;
             piece.sliceCount = this.sliceCount + 1;
-            
-            // Calculate spread angle based on piece index
-            const angle = (i * Math.PI / 2) + (Math.random() - 0.5) * 0.5;
+            const angle = (i * Math.PI) + (Math.random() - 0.5) * 0.5; // Pieces go in opposite directions
             piece.velocityX = this.velocityX + Math.cos(angle) * spread;
             piece.velocityY = this.velocityY + Math.sin(angle) * spread;
-            
             pieces.push(piece);
         }
-        
         return pieces;
     }
 
     update() {
-        if (this.sliced) {
-            this.breakProgress += 0.1; // Speed of breaking animation
-            this.angle += this.breakDirection * 0.2; // Rotation during break
-            this.y += 2; // Fall down while breaking
+        // Quick offscreen check
+        const margin = 100; // Buffer zone
+        this.isOffscreen = (
+            this.x < -margin ||
+            this.x > this.centerX * 2 + margin ||
+            this.y < -margin ||
+            this.y > this.centerY * 2 + margin
+        );
+
+        if (this.isOffscreen) return;
+
+        if (this.isFading) {
+            this.fadeProgress += 0.05;
+            if (this.fadeProgress >= 1) {
+                this.fadeProgress = 1;
+                return;
+            }
+        } else if (this.sliced) {
+            this.breakProgress += 0.1;
+            this.angle += this.breakDirection * 0.2;
+            this.y += 2;
         } else {
-            // Calculate direction to center
             const dx = this.centerX - this.x;
             const dy = this.centerY - this.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            // Apply gravitational force
             const force = this.gravity / (distance * 0.1);
             this.velocityX += (dx / distance) * force;
             this.velocityY += (dy / distance) * force;
-            
-            // Apply velocity
             this.x += this.velocityX;
             this.y += this.velocityY;
-            
-            // Add some drag to prevent excessive speeds
             this.velocityX *= 0.99;
             this.velocityY *= 0.99;
-            
             this.angle += this.rotationSpeed;
         }
-        
-        // Update particles
-        this.particles.forEach(particle => {
+
+        // Update only active particles
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            const particle = this.particles[i];
             particle.update();
-        });
-        this.particles = this.particles.filter(p => p.life > 0);
+            if (particle.life <= 0) {
+                this.particles.splice(i, 1);
+            }
+        }
+    }
+
+    draw(ctx) {
+        if (this.fadeProgress >= 1 || this.isOffscreen) return;
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        
+        if (this.isFading) {
+            ctx.globalAlpha = 1 - this.fadeProgress;
+        }
+
+        if (this.sliced) {
+            ctx.rotate(this.angle);
+            const breakOffset = this.breakProgress * 30 * this.breakDirection;
+            ctx.translate(breakOffset, 0);
+            this.drawFruit(ctx, this.width, this.height);
+            ctx.translate(-breakOffset * 2, 0);
+            this.drawFruit(ctx, this.width, this.height);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(-this.width/2 + breakOffset, -this.height/2);
+            ctx.lineTo(this.width/2 + breakOffset, this.height/2);
+            ctx.stroke();
+        } else {
+            ctx.rotate(this.angle);
+            this.drawFruit(ctx, this.width, this.height);
+        }
+        ctx.restore();
+
+        // Draw only active particles
+        for (const particle of this.particles) {
+            particle.draw(ctx);
+        }
     }
 
     drawFruit(ctx, width, height) {
@@ -233,10 +319,8 @@ class GameObject {
 
     drawGrape(ctx, width, height) {
         ctx.save();
-        const grapes = [
-            [-7,7],[0,0],[7,7],[-4,-4],[4,-4]
-        ];
-        grapes.forEach(([gx, gy], i) => {
+        const grapes = this.fruitData.coords;
+        grapes.forEach(([gx, gy]) => {
             ctx.fillStyle = this.sliced ? this.colors.grape.main + '80' : this.colors.grape.main;
             ctx.beginPath();
             ctx.arc(gx, gy, width/6, 0, Math.PI*2);
@@ -330,38 +414,34 @@ class GameObject {
             ctx.fill();
             ctx.restore();
         }
+
         ctx.fillStyle = this.colors.dragonfruit.dots;
-        for (let i = 0; i < 12; i++) {
-            const a = Math.random() * Math.PI*2;
-            const r = Math.random() * width/2.2;
+        this.fruitData.dots.forEach(({angle, radius}) => {
             ctx.beginPath();
-            ctx.arc(Math.cos(a)*r, Math.sin(a)*r, 1, 0, Math.PI*2);
+            ctx.arc(Math.cos(angle)*radius, Math.sin(angle)*radius, 1, 0, Math.PI*2);
             ctx.fill();
-        }
+        });
         ctx.restore();
     }
 
     drawWatermelon(ctx, width, height) {
         ctx.save();
-        // Rind
         ctx.fillStyle = this.colors.watermelon.rind;
         ctx.beginPath();
         ctx.ellipse(0, 0, width/2, height/2, 0, 0, Math.PI*2);
         ctx.fill();
-        // Flesh
+
         ctx.fillStyle = this.sliced ? this.colors.watermelon.main + '80' : this.colors.watermelon.main;
         ctx.beginPath();
         ctx.ellipse(0, 0, width/2-5, height/2-5, 0, 0, Math.PI*2);
         ctx.fill();
-        // Seeds
+
         ctx.fillStyle = this.colors.watermelon.seeds;
-        for (let i = 0; i < 7; i++) {
-            const angle = Math.random() * Math.PI*2;
-            const dist = Math.random() * (width/4);
+        this.fruitData.seeds.forEach(({angle, dist}) => {
             ctx.beginPath();
             ctx.ellipse(Math.cos(angle)*dist, Math.sin(angle)*dist, 2, 4, angle, 0, Math.PI*2);
             ctx.fill();
-        }
+        });
         ctx.restore();
     }
 
@@ -430,15 +510,14 @@ class GameObject {
         ctx.beginPath();
         ctx.ellipse(0, 0, width/2, height/2, 0, 0, Math.PI*2);
         ctx.fill();
-        // Seeds
+
         ctx.fillStyle = this.colors.papaya.seeds;
-        for (let i = 0; i < 9; i++) {
-            const a = Math.PI/2 + (Math.random()-0.5)*1;
-            const r = height/7 + Math.random()*height/10;
+        this.fruitData.seeds.forEach(({angle, radius}) => {
             ctx.beginPath();
-            ctx.arc(Math.cos(a)*r, Math.sin(a)*r, 1.4, 0, Math.PI*2);
+            ctx.arc(Math.cos(angle)*radius, Math.sin(angle)*radius, 1.4, 0, Math.PI*2);
             ctx.fill();
-        }
+        });
+
         ctx.strokeStyle = this.colors.papaya.stem;
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -473,16 +552,17 @@ class GameObject {
         ctx.beginPath();
         ctx.ellipse(0, 0, width/2, height/2.3, 0, 0, Math.PI*2);
         ctx.fill();
+
         ctx.strokeStyle = this.colors.kiwi.skin;
         ctx.lineWidth = 2;
         ctx.stroke();
+
         ctx.fillStyle = this.colors.kiwi.seeds;
-        for (let i = 0; i < 18; i++) {
-            const a = i*Math.PI*2/18;
+        this.fruitData.seeds.forEach(({angle, radius}) => {
             ctx.beginPath();
-            ctx.arc(Math.cos(a)*(width/4), Math.sin(a)*(height/5), 1, 0, Math.PI*2);
+            ctx.arc(Math.cos(angle)*radius, Math.sin(angle)*radius, 1, 0, Math.PI*2);
             ctx.fill();
-        }
+        });
         ctx.restore();
     }
 
@@ -509,30 +589,6 @@ class GameObject {
         ctx.lineTo(0, -height/2.3 - 7);
         ctx.stroke();
         ctx.restore();
-    }
-
-    draw(ctx) {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        if (this.sliced) {
-            ctx.rotate(this.angle);
-            const breakOffset = this.breakProgress * 30 * this.breakDirection;
-            ctx.translate(breakOffset, 0);
-            this.drawFruit(ctx, this.width, this.height);
-            ctx.translate(-breakOffset * 2, 0);
-            this.drawFruit(ctx, this.width, this.height);
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(-this.width/2 + breakOffset, -this.height/2);
-            ctx.lineTo(this.width/2 + breakOffset, this.height/2);
-            ctx.stroke();
-        } else {
-            ctx.rotate(this.angle);
-            this.drawFruit(ctx, this.width, this.height);
-        }
-        ctx.restore();
-        this.particles.forEach(particle => particle.draw(ctx));
     }
 
     createSliceParticles() {
