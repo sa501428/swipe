@@ -937,35 +937,44 @@ class Game {
     }
 
     resize() {
-        // Get the actual viewport dimensions
-        const viewportWidth = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
-        const viewportHeight = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
-        
-        // Set canvas size to match viewport
-        this.canvas.width = viewportWidth;
-        this.canvas.height = viewportHeight;
-        
-        // Update center point on resize
+        const vw = window.innerWidth,
+              vh = window.innerHeight,
+              dpr = window.devicePixelRatio || 1;
+
+        // Set buffer resolution
+        this.canvas.width = vw * dpr;
+        this.canvas.height = vh * dpr;
+
+        // Make the CSS size match
+        this.canvas.style.width = `${vw}px`;
+        this.canvas.style.height = `${vh}px`;
+
+        // Scale the drawing context back to CSS space
+        this.ctx.resetTransform();
+        this.ctx.scale(dpr, dpr);
+
+        // Update center point in CSS-pixel space
         this.updateCenterPoint();
     }
 
     updateCenterPoint() {
-        // Calculate the middle 25% of the screen
-        const marginX = this.canvas.width * 0.375; // (100% - 25%) / 2
-        const marginY = this.canvas.height * 0.375;
+        // Calculate the middle 25% of the screen in CSS-pixel space
+        const marginX = this.canvas.width / (window.devicePixelRatio || 1) * 0.375;
+        const marginY = this.canvas.height / (window.devicePixelRatio || 1) * 0.375;
         
         // Ensure center point is within the middle 25% of the screen
-        this.centerX = marginX + Math.random() * (this.canvas.width - 2 * marginX);
-        this.centerY = marginY + Math.random() * (this.canvas.height - 2 * marginY);
+        this.centerX = marginX + Math.random() * (this.canvas.width / (window.devicePixelRatio || 1) - 2 * marginX);
+        this.centerY = marginY + Math.random() * (this.canvas.height / (window.devicePixelRatio || 1) - 2 * marginY);
         
         // Log center point for debugging
         console.log('Center point updated:', {
             centerX: this.centerX,
             centerY: this.centerY,
-            screenWidth: this.canvas.width,
-            screenHeight: this.canvas.height,
+            screenWidth: this.canvas.width / (window.devicePixelRatio || 1),
+            screenHeight: this.canvas.height / (window.devicePixelRatio || 1),
             marginX,
-            marginY
+            marginY,
+            dpr: window.devicePixelRatio
         });
     }
 
@@ -979,37 +988,46 @@ class Game {
         
         this.canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            this.touchStart = {
-                x: e.touches[0].clientX,
-                y: e.touches[0].clientY
-            };
+            const rect = this.canvas.getBoundingClientRect();
+            const rawX = e.touches[0].clientX;
+            const rawY = e.touches[0].clientY;
+
+            // Map to internal canvas space
+            const x = (rawX - rect.left) * (this.canvas.width / rect.width);
+            const y = (rawY - rect.top) * (this.canvas.height / rect.height);
+
+            this.touchStart = { x, y };
         });
 
         this.canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
             if (!this.touchStart) return;
 
-            const touch = e.touches[0];
-            const endX = touch.clientX;
-            const endY = touch.clientY;
+            const rect = this.canvas.getBoundingClientRect();
+            const rawX = e.touches[0].clientX;
+            const rawY = e.touches[0].clientY;
+
+            // Map to internal canvas space
+            const x = (rawX - rect.left) * (this.canvas.width / rect.width);
+            const y = (rawY - rect.top) * (this.canvas.height / rect.height);
             
             // Create slash effect for every swipe
             this.slashEffects.push(new SlashEffect(
                 this.touchStart.x,
                 this.touchStart.y,
-                endX,
-                endY
+                x,
+                y
             ));
 
             this.checkSlice(
                 this.touchStart.x,
                 this.touchStart.y,
-                endX,
-                endY
+                x,
+                y
             );
 
             // Update touch start for continuous swipes
-            this.touchStart = { x: endX, y: endY };
+            this.touchStart = { x, y };
         });
 
         this.canvas.addEventListener('touchend', () => {
@@ -1031,23 +1049,26 @@ class Game {
         
         // Add some randomness to spawn position along the edge
         const edgeVariation = 0.3; // 30% variation from center of edge
+        const dpr = window.devicePixelRatio || 1;
+        const canvasWidth = this.canvas.width / dpr;
+        const canvasHeight = this.canvas.height / dpr;
         
         switch(side) {
             case 0: // top
-                x = this.canvas.width * (0.5 + (Math.random() - 0.5) * edgeVariation);
+                x = canvasWidth * (0.5 + (Math.random() - 0.5) * edgeVariation);
                 y = -50;
                 break;
             case 1: // right
-                x = this.canvas.width + 50;
-                y = this.canvas.height * (0.5 + (Math.random() - 0.5) * edgeVariation);
+                x = canvasWidth + 50;
+                y = canvasHeight * (0.5 + (Math.random() - 0.5) * edgeVariation);
                 break;
             case 2: // bottom
-                x = this.canvas.width * (0.5 + (Math.random() - 0.5) * edgeVariation);
-                y = this.canvas.height + 50;
+                x = canvasWidth * (0.5 + (Math.random() - 0.5) * edgeVariation);
+                y = canvasHeight + 50;
                 break;
             case 3: // left
                 x = -50;
-                y = this.canvas.height * (0.5 + (Math.random() - 0.5) * edgeVariation);
+                y = canvasHeight * (0.5 + (Math.random() - 0.5) * edgeVariation);
                 break;
         }
         
@@ -1179,7 +1200,5 @@ class Game {
     }
 }
 
-// Start the game when the page loads
-window.addEventListener('load', () => {
-    new Game();
-}); 
+// Start the game when the page loads with a delay to ensure proper initialization
+window.addEventListener('load', () => setTimeout(() => new Game(), 100)); 
