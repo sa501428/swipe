@@ -114,15 +114,18 @@ class GameObject {
     }
 
     breakIntoPieces() {
+        // If fruit is too small or has reached max slices, start fading
         if (this.size <= 0.25 || this.sliceCount >= this.maxSlices) {
             this.isFading = true; // Start fading instead of creating more pieces
             return [];
         }
-        const pieces = [];
-        const newSize = this.size * 0.7; // Slightly larger pieces
-        const spread = 8; // Increased spread for more dramatic split
 
-        // Create only 2 pieces
+        const pieces = [];
+        const newSize = this.size * 0.7;
+        const spread = 8;
+        const baseAngle = Math.random() * Math.PI; // Random starting angle
+
+        // Create exactly 2 pieces
         for (let i = 0; i < 2; i++) {
             const piece = new GameObject(
                 this.x,
@@ -135,11 +138,12 @@ class GameObject {
             );
             piece.fruitType = this.fruitType;
             piece.sliceCount = this.sliceCount + 1;
-            const angle = (i * Math.PI) + (Math.random() - 0.5) * 0.5; // Pieces go in opposite directions
+            const angle = baseAngle + (i * Math.PI); // Second piece goes in opposite direction
             piece.velocityX = this.velocityX + Math.cos(angle) * spread;
             piece.velocityY = this.velocityY + Math.sin(angle) * spread;
             pieces.push(piece);
         }
+
         return pieces;
     }
 
@@ -1085,12 +1089,12 @@ class Game {
                 obj.sliced = true;
                 sliced = true;
                 
-                // Create particles for slice effect using the proper method
+                // Create particles for slice effect
                 obj.createSliceParticles();
                 
                 // Create smaller pieces
                 const pieces = obj.breakIntoPieces();
-                if (pieces.length > 0) {
+                if (pieces && pieces.length > 0) {
                     newObjects.push(...pieces);
                 }
                 
@@ -1100,7 +1104,9 @@ class Game {
         }
         
         // Add new pieces to objects array
-        this.objects.push(...newObjects);
+        if (newObjects.length > 0) {
+            this.objects.push(...newObjects);
+        }
         
         return sliced;
     }
@@ -1163,12 +1169,11 @@ class Game {
         
         // Update objects
         this.objects = this.objects.filter(obj => {
+            if (obj.isFading && obj.fadeProgress >= 1) {
+                return false;
+            }
             obj.update();
-            return !obj.sliced && 
-                   obj.x > -100 && 
-                   obj.x < this.canvas.width + 100 && 
-                   obj.y > -100 && 
-                   obj.y < this.canvas.height + 100;
+            return !obj.isOffscreen;
         });
 
         // Update slash effects
