@@ -862,9 +862,9 @@ class Game {
         this.score = 0;
         this.objects = [];
         this.lastSpawnTime = 0;
-        this.spawnInterval = 5000; // Base spawn interval of 5 seconds
-        this.minSpawnInterval = 5000; // Minimum 5 seconds between spawns
-        this.maxSpawnInterval = 10000; // Maximum 10 seconds between spawns
+        this.spawnInterval = 3000; // Base spawn interval of 3 seconds
+        this.minSpawnInterval = 3000; // Minimum 3 seconds between spawns
+        this.maxSpawnInterval = 5000; // Maximum 5 seconds between spawns
         this.touchStart = null;
         this.gameStartTime = Date.now();
         this.speedMultiplier = 1;
@@ -963,7 +963,7 @@ class Game {
         if (now - this.lastSpawnTime < this.spawnInterval) return;
         
         this.lastSpawnTime = now;
-        // Randomize next spawn time between 5-10 seconds
+        // Randomize next spawn time between 3-5 seconds
         this.spawnInterval = this.minSpawnInterval + Math.random() * (this.maxSpawnInterval - this.minSpawnInterval);
         
         // Spawn objects from the edges
@@ -1072,8 +1072,8 @@ class Game {
             this.speedMultiplier += 0.2;
             this.lastDifficultyIncrease = currentTime;
             // Don't decrease spawn interval below minimum
-            this.minSpawnInterval = Math.max(3000, this.minSpawnInterval - 200);
-            this.maxSpawnInterval = Math.max(8000, this.maxSpawnInterval - 200);
+            this.minSpawnInterval = Math.max(2000, this.minSpawnInterval - 100); // Won't go below 2 seconds
+            this.maxSpawnInterval = Math.max(4000, this.maxSpawnInterval - 100); // Won't go below 4 seconds
         }
 
         // Update background color every minute
