@@ -76,10 +76,18 @@ class GameObject {
         const distance = Math.sqrt(dx * dx + dy * dy);
         const angle = Math.atan2(dy, dx);
         
-        // Set initial velocity perpendicular to radius for orbital motion
+        // Calculate launch angle towards center with ±20 degree variation
+        const targetAngle = angle + Math.PI; // Angle towards center
+        const variation = (Math.random() - 0.5) * (Math.PI / 9); // ±20 degrees in radians
+        const launchAngle = targetAngle + variation;
+        
+        // Set initial velocity with some tangential component for elliptical orbit
         const orbitalSpeed = (Math.random() * 2 + 3) * this.speedMultiplier;
-        this.velocityX = Math.cos(angle + Math.PI/2) * orbitalSpeed;
-        this.velocityY = Math.sin(angle + Math.PI/2) * orbitalSpeed;
+        const tangentialFactor = 0.7; // How much of the velocity is tangential vs radial
+        this.velocityX = Math.cos(launchAngle) * orbitalSpeed * (1 - tangentialFactor) + 
+                        Math.cos(launchAngle + Math.PI/2) * orbitalSpeed * tangentialFactor;
+        this.velocityY = Math.sin(launchAngle) * orbitalSpeed * (1 - tangentialFactor) + 
+                        Math.sin(launchAngle + Math.PI/2) * orbitalSpeed * tangentialFactor;
         
         this.sliceCount = 0;
         this.maxSlices = 2; // Changed to 2 since we only want one split
@@ -158,16 +166,27 @@ class GameObject {
             this.angle += this.breakDirection * 0.2;
             this.y += 2;
         } else {
+            // Calculate gravitational force
             const dx = this.centerX - this.x;
             const dy = this.centerY - this.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            const force = this.gravity / (distance * 0.1);
+            
+            // Stronger gravity when closer to center for more elliptical orbits
+            const force = this.gravity / (distance * 0.05);
+            
+            // Apply gravitational force
             this.velocityX += (dx / distance) * force;
             this.velocityY += (dy / distance) * force;
+            
+            // Add slight drag to prevent infinite orbits
+            this.velocityX *= 0.999;
+            this.velocityY *= 0.999;
+            
+            // Update position
             this.x += this.velocityX;
             this.y += this.velocityY;
-            this.velocityX *= 0.99;
-            this.velocityY *= 0.99;
+            
+            // Update rotation
             this.angle += this.rotationSpeed;
         }
 
@@ -843,7 +862,9 @@ class Game {
         this.score = 0;
         this.objects = [];
         this.lastSpawnTime = 0;
-        this.spawnInterval = 1500;
+        this.spawnInterval = 5000; // Base spawn interval of 5 seconds
+        this.minSpawnInterval = 5000; // Minimum 5 seconds between spawns
+        this.maxSpawnInterval = 10000; // Maximum 10 seconds between spawns
         this.touchStart = null;
         this.gameStartTime = Date.now();
         this.speedMultiplier = 1;
@@ -942,27 +963,32 @@ class Game {
         if (now - this.lastSpawnTime < this.spawnInterval) return;
         
         this.lastSpawnTime = now;
+        // Randomize next spawn time between 5-10 seconds
+        this.spawnInterval = this.minSpawnInterval + Math.random() * (this.maxSpawnInterval - this.minSpawnInterval);
         
         // Spawn objects from the edges
         let x, y;
         const side = Math.floor(Math.random() * 4); // 0: top, 1: right, 2: bottom, 3: left
         
+        // Add some randomness to spawn position along the edge
+        const edgeVariation = 0.3; // 30% variation from center of edge
+        
         switch(side) {
             case 0: // top
-                x = Math.random() * this.canvas.width;
+                x = this.canvas.width * (0.5 + (Math.random() - 0.5) * edgeVariation);
                 y = -50;
                 break;
             case 1: // right
                 x = this.canvas.width + 50;
-                y = Math.random() * this.canvas.height;
+                y = this.canvas.height * (0.5 + (Math.random() - 0.5) * edgeVariation);
                 break;
             case 2: // bottom
-                x = Math.random() * this.canvas.width;
+                x = this.canvas.width * (0.5 + (Math.random() - 0.5) * edgeVariation);
                 y = this.canvas.height + 50;
                 break;
             case 3: // left
                 x = -50;
-                y = Math.random() * this.canvas.height;
+                y = this.canvas.height * (0.5 + (Math.random() - 0.5) * edgeVariation);
                 break;
         }
         
@@ -1055,7 +1081,9 @@ class Game {
         if (currentTime - this.lastDifficultyIncrease >= this.difficultyIncreaseInterval) {
             this.speedMultiplier += 0.2;
             this.lastDifficultyIncrease = currentTime;
-            this.spawnInterval = Math.max(500, this.spawnInterval - 100);
+            // Don't decrease spawn interval below minimum
+            this.minSpawnInterval = Math.max(3000, this.minSpawnInterval - 200);
+            this.maxSpawnInterval = Math.max(8000, this.maxSpawnInterval - 200);
         }
 
         // Update background color every minute
