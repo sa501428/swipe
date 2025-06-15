@@ -1008,18 +1008,8 @@ class Game {
                 obj.sliced = true;
                 sliced = true;
                 
-                // Create particles for slice effect
-                for (let j = 0; j < 10; j++) {
-                    const angle = Math.random() * Math.PI * 2;
-                    const speed = Math.random() * 5 + 2;
-                    obj.particles.push({
-                        x: obj.x,
-                        y: obj.y,
-                        vx: Math.cos(angle) * speed,
-                        vy: Math.sin(angle) * speed,
-                        life: 1
-                    });
-                }
+                // Create particles for slice effect using the proper method
+                obj.createSliceParticles();
                 
                 // Create smaller pieces
                 const pieces = obj.breakIntoPieces();
