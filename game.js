@@ -900,8 +900,14 @@ class Game {
     }
 
     resize() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+        // Get the actual viewport dimensions
+        const viewportWidth = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+        const viewportHeight = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+        
+        // Set canvas size to match viewport
+        this.canvas.width = viewportWidth;
+        this.canvas.height = viewportHeight;
+        
         // Update center point on resize
         this.updateCenterPoint();
     }
@@ -911,12 +917,28 @@ class Game {
         const marginX = this.canvas.width * 0.375; // (100% - 25%) / 2
         const marginY = this.canvas.height * 0.375;
         
+        // Ensure center point is within the middle 25% of the screen
         this.centerX = marginX + Math.random() * (this.canvas.width - 2 * marginX);
         this.centerY = marginY + Math.random() * (this.canvas.height - 2 * marginY);
+        
+        // Log center point for debugging
+        console.log('Center point updated:', {
+            centerX: this.centerX,
+            centerY: this.centerY,
+            screenWidth: this.canvas.width,
+            screenHeight: this.canvas.height,
+            marginX,
+            marginY
+        });
     }
 
     setupEventListeners() {
+        // Handle both resize and orientation change events
         window.addEventListener('resize', () => this.resize());
+        window.addEventListener('orientationchange', () => {
+            // Small delay to ensure new dimensions are available
+            setTimeout(() => this.resize(), 100);
+        });
         
         this.canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
