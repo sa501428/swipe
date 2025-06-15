@@ -162,9 +162,17 @@ class GameObject {
                 return;
             }
         } else if (this.sliced) {
+            // Continue movement even when sliced
             this.breakProgress += 0.1;
             this.angle += this.breakDirection * 0.2;
-            this.y += 2;
+            
+            // Apply gravity and movement to sliced pieces
+            this.velocityY += this.gravity * 0.5; // Reduced gravity for sliced pieces
+            this.x += this.velocityX * 0.8; // Continue horizontal movement
+            this.y += this.velocityY;
+            
+            // Add some rotation based on movement
+            this.rotationSpeed = (this.velocityX * 0.01) + (Math.random() - 0.5) * 0.1;
         } else {
             // Calculate gravitational force
             const dx = this.centerX - this.x;
@@ -213,10 +221,20 @@ class GameObject {
         if (this.sliced) {
             ctx.rotate(this.angle);
             const breakOffset = this.breakProgress * 30 * this.breakDirection;
+            
+            // Draw first half
+            ctx.save();
             ctx.translate(breakOffset, 0);
             this.drawFruit(ctx, this.width, this.height);
+            ctx.restore();
+            
+            // Draw second half
+            ctx.save();
             ctx.translate(-breakOffset * 2, 0);
             this.drawFruit(ctx, this.width, this.height);
+            ctx.restore();
+            
+            // Draw slice line
             ctx.strokeStyle = '#ffffff';
             ctx.lineWidth = 2;
             ctx.beginPath();
@@ -627,17 +645,36 @@ class GameObject {
 
     createSliceParticles() {
         // Create more particles for a more dramatic effect
-        for (let i = 0; i < 20; i++) {
+        const particleCount = 20;
+        const baseSpeed = 8;
+        
+        for (let i = 0; i < particleCount; i++) {
             const angle = (Math.random() * Math.PI * 2);
-            const speed = Math.random() * 8 + 2;
+            const speed = Math.random() * baseSpeed + 2;
+            const size = Math.random() * 4 + 2;
+            
+            // Create particles with initial velocity based on the fruit's current velocity
+            const vx = this.velocityX * 0.5 + Math.cos(angle) * speed;
+            const vy = this.velocityY * 0.5 + Math.sin(angle) * speed;
+            
             this.particles.push(new Particle(
                 this.x,
                 this.y,
-                Math.cos(angle) * speed,
-                Math.sin(angle) * speed,
-                this.color // Use the object's color for particles
+                vx,
+                vy,
+                this.getFruitColor() // Get the appropriate color for the fruit type
             ));
         }
+    }
+
+    getFruitColor() {
+        // Get the main color for the current fruit type
+        const fruitTypes = ['apple', 'banana', 'orange', 'grape', 'pineapple', 
+                          'starfruit', 'dragonfruit', 'watermelon', 'pomegranate', 
+                          'passionfruit', 'lychee', 'papaya', 'mangosteen', 
+                          'kiwi', 'persimmon'];
+        const fruitName = fruitTypes[this.fruitType];
+        return GameObject.COLORS[fruitName].main;
     }
 }
 
