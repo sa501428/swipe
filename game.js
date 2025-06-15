@@ -144,6 +144,10 @@ class GameObject {
             pieces.push(piece);
         }
 
+        // Mark this object as sliced to prevent further slicing
+        this.sliced = true;
+        this.isFading = true;
+
         return pieces;
     }
 
@@ -1086,9 +1090,6 @@ class Game {
         for (let i = this.objects.length - 1; i >= 0; i--) {
             const obj = this.objects[i];
             if (!obj.sliced && this.lineIntersectsObject(startX, startY, endX, endY, obj)) {
-                obj.sliced = true;
-                sliced = true;
-                
                 // Create particles for slice effect
                 obj.createSliceParticles();
                 
@@ -1100,6 +1101,8 @@ class Game {
                 
                 // Play squish sound when fruit is hit
                 this.soundManager.playSquish();
+                sliced = true;
+                break;
             }
         }
         
