@@ -959,19 +959,19 @@ class Game {
 
     updateCenterPoint() {
         // Calculate the middle 25% of the screen in CSS-pixel space
-        const marginX = this.canvas.width / (window.devicePixelRatio || 1) * 0.375;
-        const marginY = this.canvas.height / (window.devicePixelRatio || 1) * 0.375;
+        const marginX = this.canvas.width * 0.375;
+        const marginY = this.canvas.height * 0.375;
         
         // Ensure center point is within the middle 25% of the screen
-        this.centerX = marginX + Math.random() * (this.canvas.width / (window.devicePixelRatio || 1) - 2 * marginX);
-        this.centerY = marginY + Math.random() * (this.canvas.height / (window.devicePixelRatio || 1) - 2 * marginY);
+        this.centerX = marginX + Math.random() * (this.canvas.width - 2 * marginX);
+        this.centerY = marginY + Math.random() * (this.canvas.height - 2 * marginY);
         
         // Log center point for debugging
         console.log('Center point updated:', {
             centerX: this.centerX,
             centerY: this.centerY,
-            screenWidth: this.canvas.width / (window.devicePixelRatio || 1),
-            screenHeight: this.canvas.height / (window.devicePixelRatio || 1),
+            screenWidth: this.canvas.width,
+            screenHeight: this.canvas.height,
             marginX,
             marginY,
             dpr: window.devicePixelRatio
@@ -992,9 +992,9 @@ class Game {
             const rawX = e.touches[0].clientX;
             const rawY = e.touches[0].clientY;
 
-            // Map to internal canvas space
-            const x = (rawX - rect.left) * (this.canvas.width / rect.width);
-            const y = (rawY - rect.top) * (this.canvas.height / rect.height);
+            // Map to CSS-pixel space (not canvas buffer space)
+            const x = (rawX - rect.left);
+            const y = (rawY - rect.top);
 
             this.touchStart = { x, y };
         });
@@ -1007,9 +1007,9 @@ class Game {
             const rawX = e.touches[0].clientX;
             const rawY = e.touches[0].clientY;
 
-            // Map to internal canvas space
-            const x = (rawX - rect.left) * (this.canvas.width / rect.width);
-            const y = (rawY - rect.top) * (this.canvas.height / rect.height);
+            // Map to CSS-pixel space (not canvas buffer space)
+            const x = (rawX - rect.left);
+            const y = (rawY - rect.top);
             
             // Create slash effect for every swipe
             this.slashEffects.push(new SlashEffect(
@@ -1049,26 +1049,23 @@ class Game {
         
         // Add some randomness to spawn position along the edge
         const edgeVariation = 0.3; // 30% variation from center of edge
-        const dpr = window.devicePixelRatio || 1;
-        const canvasWidth = this.canvas.width / dpr;
-        const canvasHeight = this.canvas.height / dpr;
         
         switch(side) {
             case 0: // top
-                x = canvasWidth * (0.5 + (Math.random() - 0.5) * edgeVariation);
+                x = this.canvas.width * (0.5 + (Math.random() - 0.5) * edgeVariation);
                 y = -50;
                 break;
             case 1: // right
-                x = canvasWidth + 50;
-                y = canvasHeight * (0.5 + (Math.random() - 0.5) * edgeVariation);
+                x = this.canvas.width + 50;
+                y = this.canvas.height * (0.5 + (Math.random() - 0.5) * edgeVariation);
                 break;
             case 2: // bottom
-                x = canvasWidth * (0.5 + (Math.random() - 0.5) * edgeVariation);
-                y = canvasHeight + 50;
+                x = this.canvas.width * (0.5 + (Math.random() - 0.5) * edgeVariation);
+                y = this.canvas.height + 50;
                 break;
             case 3: // left
                 x = -50;
-                y = canvasHeight * (0.5 + (Math.random() - 0.5) * edgeVariation);
+                y = this.canvas.height * (0.5 + (Math.random() - 0.5) * edgeVariation);
                 break;
         }
         
